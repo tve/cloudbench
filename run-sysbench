@@ -1,16 +1,16 @@
 #! /bin/bash
 
 # CPU
-sysbench --test=cpu --cpu-max-prime=100000 run |
-  ./cloudbench/report-sysbench $CLOUD $MACHINE sysbench-cpu-100k
 sysbench --max-time=2 --test=cpu --cpu-max-prime=100000 run |
   ./cloudbench/report-sysbench $CLOUD $MACHINE sysbench-cpu-100k-2s
+sysbench --max-time=60 --test=cpu --cpu-max-prime=100000 run |
+  ./cloudbench/report-sysbench $CLOUD $MACHINE sysbench-cpu-100k
 
 # MEMORY
-sysbench --test=memory --memory-block-size=1M run |
-  ./cloudbench/report-sysbench $CLOUD $MACHINE sysbench-memory-1M
 sysbench --max-time=2 --test=memory --memory-block-size=1M run |
   ./cloudbench/report-sysbench $CLOUD $MACHINE sysbench-memory-1M-2s
+sysbench --max-time=60 --test=memory --memory-block-size=1M run |
+  ./cloudbench/report-sysbench $CLOUD $MACHINE sysbench-memory-1M
 
 # DISK
 sz=1G
