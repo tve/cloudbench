@@ -1,14 +1,36 @@
 #! /usr/bin/env ruby
+require 'google_drive'
+
+GS='0Aq-daXyC3OSSdFhqY1lORFdHSkdZMjJraTBKa0thQUE'
+#$gs = GoogleDrive.saved_session
+$gs = GoogleDrive::Session.new({:wise => open('.ssh_tok').gets.chomp}, nil)
+$ss = $gs.spreadsheet_by_key(GS)
+puts "Spreadsheet: #{$ss.title}"
+today = Time.now.strftime("%Y-%m")
+$sheet = $ss.worksheet_by_title("raw " + today)
+$sheet ||= $ss.add_worksheet("raw " + today)
+
 info=ARGV
 #puts info.join(' ')
-r={}
+t={}
 while line = STDIN.gets
   if line =~ /(min|avg|max):\s+([\d.]+)ms/
     #puts "#{info.join(' ')} #{$1} #{$2}"
-    r[$1] = $2
+    t[$1] = $2
   elsif line =~ /(\d+) percentile:\s+([\d.]+)ms/
     #puts "#{info.join(' ')} #{$1}th #{$2}"
-    r[$1+'th'] = $2
+    t[$1+'th'] = $2
   end
 end
-puts "#{info.join(' ')} #{%w{avg min max 95th}.map{|i|r[i]||'--'}.join(' ')}"
+puts "#{info.join(' ')} #{%w{avg min max 95th}.map{|i|t[i]||'--'}.join(' ')}"
+
+r = $sheet.num_rows
+$sheet[r+1,1] = info[0]
+$sheet[r+1,2] = info[1]
+$sheet[r+1,3] = info[2]
+$sheet[r+1,4] = t['avg']
+$sheet[r+1,5] = t['min']
+$sheet[r+1,6] = t['max']
+$sheet[r+1,7] = t['95th']
+
+$sheet.save
