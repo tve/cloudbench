@@ -2,24 +2,25 @@
 
 # CPU
 sysbench --test=cpu --cpu-max-prime=100000 run |
-  ./cloudbench/report-sysbench $CLOUD $HOST sysbench-cpu-100k
+  ./cloudbench/report-sysbench $CLOUD $MACHINE sysbench-cpu-100k
 sysbench --max-time=2 --test=cpu --cpu-max-prime=100000 run |
-  ./cloudbench/report-sysbench $CLOUD $HOST sysbench-cpu-100k-2s
+  ./cloudbench/report-sysbench $CLOUD $MACHINE sysbench-cpu-100k-2s
 
 # MEMORY
 sysbench --test=memory --memory-block-size=1M run |
-  ./cloudbench/report-sysbench $CLOUD $HOST sysbench-memory-1M
+  ./cloudbench/report-sysbench $CLOUD $MACHINE sysbench-memory-1M
 sysbench --max-time=2 --test=memory --memory-block-size=1M run |
-  ./cloudbench/report-sysbench $CLOUD $HOST sysbench-memory-1M-2s
+  ./cloudbench/report-sysbench $CLOUD $MACHINE sysbench-memory-1M-2s
 
 # DISK
-(cd sysbench; sysbench --file-total-size=130G --test=fileio prepare)
+sz=1G
+(cd sysbench; sysbench --file-total-size=$sz --test=fileio prepare)
 for thr in 1 4 8 16 32 64; do
   for test in seqrd seqwr rndrd rndwr; do
     for mode in sync async; do
       (cd sysbench; sysbench --max-time=10s --num-threads=$thr --test=fileio \
-        --file-total-size=130G --file-test-mode=$test --file-io-mode=$mode run) |
-        ./cloudbench/report-sysbench $CLOUD $HOST sysbench-fileio-130G-$test-${thr}t-$mode
+        --file-total-size=$sz --file-test-mode=$test --file-io-mode=$mode run) |
+        ./cloudbench/report-sysbench $CLOUD $MACHINE sysbench-fileio-$sz-$test-${thr}t-$mode
     done
   done
 done
