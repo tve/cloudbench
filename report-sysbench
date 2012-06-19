@@ -1,4 +1,5 @@
 #! /usr/bin/env ruby
+require 'rubygems'
 require 'google_drive'
 
 GS='0Aq-daXyC3OSSdFhqY1lORFdHSkdZMjJraTBKa0thQUE'
