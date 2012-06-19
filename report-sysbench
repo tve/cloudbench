@@ -8,7 +8,7 @@ while line = STDIN.gets
     r[$1] = $2
   elsif line =~ /(\d+) percentile:\s+([\d.]+)ms/
     #puts "#{info.join(' ')} #{$1}th #{$2}"
-    r[$1] = $2+'th'
+    r[$1+'th'] = $2
   end
 end
 puts "#{info.join(' ')} #{%w{avg min max 95th}.map{|i|r[i]||'--'}.join(' ')}"
