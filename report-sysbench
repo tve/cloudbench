@@ -1,0 +1,14 @@
+#! /usr/bin/env ruby
+info=ARGV
+#puts info.join(' ')
+r={}
+while line = STDIN.gets
+  if line =~ /(min|avg|max):\s+([\d.]+)ms/
+    #puts "#{info.join(' ')} #{$1} #{$2}"
+    r[$1] = $2
+  elsif line =~ /(\d+) percentile:\s+([\d.]+)ms/
+    #puts "#{info.join(' ')} #{$1}th #{$2}"
+    r[$1] = $2+'th'
+  end
+end
+puts "#{info.join(' ')} #{%w{avg min max 95th}.map{|i|r[i]||'--'}.join(' ')}"
