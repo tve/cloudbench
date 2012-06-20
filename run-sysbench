@@ -28,7 +28,3 @@ for sz in 1G 130G; do
     done
   done
 done
-
-#for c in 1 4 8 16 32; do
-#    bonnie -c $c -s 130g
-#    done

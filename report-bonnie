@@ -1,0 +1,47 @@
+#! /usr/bin/env ruby
+require 'rubygems'
+require 'google_drive'
+
+GS='0Aq-daXyC3OSSdFhqY1lORFdHSkdZMjJraTBKa0thQUE'
+#$gs = GoogleDrive.saved_session
+$gs = GoogleDrive::Session.new({:wise => open('.ssh_tok').gets.chomp}, nil)
+$ss = $gs.spreadsheet_by_key(GS)
+ws = "raw" + Time.now.strftime("%Y-%m")
+puts "Spreadsheet: #{$ss.title} / #{ws}"
+$sheet = $ss.worksheet_by_title(ws)
+$sheet ||= $ss.add_worksheet(ws)
+
+info=ARGV
+#puts info.join(' ')
+t={}
+while line = STDIN.gets
+  puts line.chomp
+  if line =~ /\d+,\d+,\d+,/
+    t = line.split(',')
+  end
+end
+{ :seqrd => 10, :seqwr => 4, :rndseek => 12 }.each_pair do |test, ix|
+  puts "#{info.join(' ')}-#{test} #{t[ix]}"
+
+  r = $sheet.num_rows
+  $sheet[r+1,1] = info[0]
+  $sheet[r+1,2] = info[1]
+  $sheet[r+1,3] = info[2] + "-" + test
+  $sheet[r+1,4] = t[ix]
+  $sheet[r+1,5] = '--'
+  $sheet[r+1,6] = '--'
+  $sheet[r+1,7] = '--'
+end
+
+$sheet.save
+
+#Version  1.03       ------Sequential Output------ --Sequential Input- --Random-
+#                    -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+#Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+#ip-10-252-13 35000M 78668  97 89875   5 37182   0 65976  70 114628   0 314.2   0
+#                    ------Sequential Create------ --------Random Create--------
+#                    -Create-- --Read--- -Delete-- -Create-- --Read--- -Delete--
+#              files  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP
+#                 16 12019  22 +++++ +++  6829   5 10581  20 +++++ +++  4891   1
+#ip-10-252-134-197,35000M,78668,97,89875,5,37182,0,65976,70,114628,0,314.2,0,16,12019,22,+++++,+++,6829,5,10581,20,+++++,+++,4891,1
+#
