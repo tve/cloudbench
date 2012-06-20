@@ -1,5 +1,6 @@
 #! /bin/bash
 
+set -x
 for sz in 1000 130000; do
   for thr in 1 4 8 16 32 64; do
     /usr/sbin/bonnie++ -d bonnie -u 0:0 -p $thr -s $sz \
