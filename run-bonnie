@@ -3,5 +3,5 @@
 set -x
 /usr/sbin/bonnie++ -d bonnie -u 0:0 |
     ./cloudbench/report-bonnie $CLOUD $MACHINE bonnie
-/usr/sbin/bonnie++ -d bonnie -u 0:0 -s 130000 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE bonnie-130G
+#/usr/sbin/bonnie++ -d bonnie -u 0:0 -s 130000 |
+#    ./cloudbench/report-bonnie $CLOUD $MACHINE bonnie-130G
