@@ -21,6 +21,7 @@ while line = STDIN.gets
   end
 end
 { :seqrd => 10, :seqwr => 4, :rndseek => 12 }.each_pair do |test, ix|
+  next unless t[ix]
   puts "#{info.join(' ')}-#{test.to_s} #{t[ix]}"
 
   r = $sheet.num_rows

@@ -1,7 +1,7 @@
 #! /bin/bash
 
 set -x
-for sz in 1000 130000; do
-  /usr/sbin/bonnie++ -d bonnie -u 0:0 -s $sz |
-      ./cloudbench/report-bonnie $CLOUD $MACHINE bonnie-$sz
-done
+/usr/sbin/bonnie++ -d bonnie -u 0:0 |
+    ./cloudbench/report-bonnie $CLOUD $MACHINE bonnie-$sz
+/usr/sbin/bonnie++ -d bonnie -u 0:0 -s 130000 |
+    ./cloudbench/report-bonnie $CLOUD $MACHINE bonnie-$sz

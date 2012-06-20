@@ -26,6 +26,8 @@ while line = STDIN.gets
 end
 puts "#{info.join(' ')} #{%w{avg min max 95th}.map{|i|t[i]||'--'}.join(' ')}"
 
+exit unless t['avg']
+
 r = $sheet.num_rows
 $sheet[r+1,1] = info[0]
 $sheet[r+1,2] = info[1]
