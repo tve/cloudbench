@@ -14,13 +14,21 @@ $sheet ||= $ss.add_worksheet(ws)
 info=ARGV
 #puts info.join(' ')
 t={}
+v=nil
 while line = STDIN.gets
   puts line.chomp
+  if line =~ /Version\s*([\d.]+)/
+    v = $1
   if line =~ /\d+,\d+,\d+,/
     t = line.split(',')
   end
 end
-{ :seqrd => 10, :seqwr => 4, :rndseek => 12 }.each_pair do |test, ix|
+cols = if v == '1.03'
+    { :seqrd => 10, :seqwr => 4, :rndseek => 12 }
+  else
+    { :seqrd => 15, :seqwr => 9, :rndseek => 17 }
+  end
+cols.each_pair do |test, ix|
   next unless t[ix]
   puts "#{info.join(' ')}-#{test.to_s} #{t[ix]}"
 
