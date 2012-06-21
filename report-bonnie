@@ -19,7 +19,7 @@ while line = STDIN.gets
   puts line.chomp
   if line =~ /Version\s*([\d.]+)/
     v = $1
-  if line =~ /\d+,\d+,\d+,/
+  elsif line =~ /\d+,\d+,\d+,/
     t = line.split(',')
   end
 end
