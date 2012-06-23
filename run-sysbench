@@ -27,6 +27,7 @@ for sz in '130G'; do
       done
     done
   done
+  (cd sysbench; sysbench --file-total-size=$sz --test=fileio cleanup)
 done
 
 

@@ -1,0 +1,37 @@
+#! /usr/bin/env ruby
+require 'json'
+
+i_name = ARGV[0]
+sz=ARGV[1]
+puts "Taking over instance #{i_name} adding #{sz}GB disk"
+exit 1 unless i_name =~ /^i-/ && sz.to_i > 0
+
+i_info = `gcutil getinstance #{i_name} --print_json`
+unless i_info =~ /^\{/
+  puts "Error: #{i_info}"
+  exit 1
+end
+i_info = JSON.parse(i_info)
+unless i_info['metadata']
+  puts "Error: no metadat found in #{i_info}"
+  exit 1
+end
+
+public_ip = i_info["networkInterfaces"][0]["accessConfigs"][0]["natIP"]
+cmd = "ssh -i /home/tve/.ssh/tve-voneicken #{public_ip} -c ''"
+puts cmd
+
+cmd = "gcutil adddisk #{i_name}-disk --size_gb=#{sz} --zone=#{i_info['zone']} " +
+      "--wait_until_complete"
+puts cmd
+system(cmd) || exit(1)
+
+cmd = "gcutil addinstance #{i_name}-disk --image=#{i_info['image']} " +
+      "--machine_type=#{i_info['machineType']} --zone=#{i_info['zone']} " +
+      "--disk=#{i_name}-disk " +
+      "--tags=#{i_info['tags'].join(',')} " +
+      i_info['metadata']['items'].map{|m|
+        "--metadata=#{m['key']}:#{m['value']}"
+      }.join(' ')
+puts cmd
+system cmd

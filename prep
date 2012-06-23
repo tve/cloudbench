@@ -1,0 +1,31 @@
+gem install google_drive --no-rdoc --no-ri
+if [ -d cloudbench ]; then
+  (cd cloudbench; git pull)
+else
+  git clone git://github.com/tve/cloudbench.git
+fi
+export PATH=$PATH:`pwd`/cloudbench
+
+# format and mount disk
+if [ -e /dev/sdm ]; then
+  if ! mount | egrep '/dev/sdm'; then
+    mkdir -p /mnt/ebs
+    mkfs.xfs /dev/sdm
+    mount /dev/sdm /mnt/ebs
+  fi
+  ln -s bench /mnt/ebs
+
+elif [ -e /dev/vdb ]; then
+  if ! mount | egrep '/dev/vdb'; then
+    mkfs.xfs /dev/vdb
+    mount /dev/vdb /mnt/ephemeral
+  fi
+  ln -s bench /mnt/ephemeral
+
+elif mount | egrep '/mnt/ephemeral'; then
+  ln -s bench /mnt/ephemeral
+
+fi
+
+df -h
+ls -lsL bench
