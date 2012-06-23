@@ -11,6 +11,15 @@ puts "Spreadsheet: #{$ss.title} / #{ws}"
 $sheet = $ss.worksheet_by_title(ws)
 $sheet ||= $ss.add_worksheet(ws)
 
+def append_row(gs_session, gs_sheet, row_hash={})
+  xml = '<entry xmlns="http://www.w3.org/2005/Atom" xmlns:gsx="http://schemas.google.com/spreadsheets/2006/extended">'
+  row_hash.each_pair do |k, v|
+    xml << "<gsx:#{k}>#{v}</gsx:#{k}>"
+  end
+  xml << "</entry>"
+  gs_session.request(:post, gs_sheet.list_feed_url, :data => xml)
+end
+
 info=ARGV
 #puts info.join(' ')
 t={}
@@ -23,6 +32,28 @@ while line = STDIN.gets
     t = line.split(',')
   end
 end
+
+if v == '1.03'
+  t[0] = info[1]
+  t.unshift info[0]
+else
+  t.shift
+  t[0] = info[0]
+  t[1] = info[1]
+end
+
+cols = %w{cloud machine size seqwr-chr-kbs seqwr-chr-cpu seqwr-blk-kbs  seqwr-blk-cpu rewr-blk-kbs rewr-blk-cpu  seqrd-chr-kbs  seqrd-chr-cpu seqrd-blk-kbs  seqrd-blk-cpu rndseek-rate  rndseek-cpu}
+
+data = {}
+t.each_index do |i|
+  data[cols[i]||i] = t[i]
+end
+append_row($gs, $sheet, data)
+
+exit
+
+
+=begin
 cols = if v == '1.03'
     { :seqrd => 10, :seqwr => 4, :rndseek => 12 }
   else
@@ -40,6 +71,7 @@ cols.each_pair do |test, ix|
 end
 
 $sheet.save
+=end
 
 #Version  1.03       ------Sequential Output------ --Sequential Input- --Random-
 #                    -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
