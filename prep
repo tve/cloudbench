@@ -1,3 +1,7 @@
+#! /bin/bash -e
+pwd
+cd /root
+
 gem install google_drive --no-rdoc --no-ri
 if [ -d cloudbench ]; then
   (cd cloudbench; git pull)
@@ -13,17 +17,17 @@ if [ -e /dev/sdm ]; then
     mkfs.xfs /dev/sdm
     mount /dev/sdm /mnt/ebs
   fi
-  ln -s bench /mnt/ebs
+  ln -s /mnt/ebs bench
 
 elif [ -e /dev/vdb ]; then
   if ! mount | egrep '/dev/vdb'; then
     mkfs.xfs /dev/vdb
     mount /dev/vdb /mnt/ephemeral
   fi
-  ln -s bench /mnt/ephemeral
+  ln -s /mnt/ephemeral bench
 
 elif mount | egrep '/mnt/ephemeral'; then
-  ln -s bench /mnt/ephemeral
+  ln -s /mnt/ephemeral bench
 
 fi
 
