@@ -1,5 +1,4 @@
 #! /bin/bash -e
-pwd
 cd /root
 
 gem install google_drive --no-rdoc --no-ri
@@ -11,24 +10,26 @@ fi
 export PATH=$PATH:`pwd`/cloudbench
 
 # format and mount disk
-if [ -e /dev/sdm ]; then
-  if ! mount | egrep '/dev/sdm'; then
-    mkdir -p /mnt/ebs
-    mkfs.xfs /dev/sdm
-    mount /dev/sdm /mnt/ebs
+if ! [ -e bench ]; then
+  if [ -e /dev/sdm ]; then
+    if ! mount | egrep '/dev/sdm'; then
+      mkdir -p /mnt/ebs
+      mkfs.xfs /dev/sdm
+      mount /dev/sdm /mnt/ebs
+      ln -s /mnt/ebs bench
+    fi
+
+  elif [ -e /dev/vdb ]; then
+    if ! mount | egrep '/dev/vdb'; then
+      mkfs.xfs /dev/vdb
+      mount /dev/vdb /mnt/ephemeral
+      ln -s /mnt/ephemeral bench
+    fi
+
+  elif mount | egrep '/mnt/ephemeral'; then
+    ln -s /mnt/ephemeral bench
+
   fi
-  ln -s /mnt/ebs bench
-
-elif [ -e /dev/vdb ]; then
-  if ! mount | egrep '/dev/vdb'; then
-    mkfs.xfs /dev/vdb
-    mount /dev/vdb /mnt/ephemeral
-  fi
-  ln -s /mnt/ephemeral bench
-
-elif mount | egrep '/mnt/ephemeral'; then
-  ln -s /mnt/ephemeral bench
-
 fi
 
 df -h
