@@ -1,6 +1,6 @@
 #! /bin/bash
-
 set -x
+cd /root
 mkdir bench/bonnie
 /usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f |
     ./cloudbench/report-bonnie $CLOUD $MACHINE c1

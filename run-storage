@@ -1,0 +1,11 @@
+#! /usr/bin/env ruby
+
+require 'right_aws'
+key_id = ENV['AWS_ACCESS_KEY_ID']
+secret = ENV['AWS_SECRET_ACCESS_KEY']
+
+system 'dd if=/dev/random of=/tmp/random-gig bs=1K count=1M'
+
+bucket = s3=RightAws::S3Generator.new(,'7CYJoNJkLlsw/LDdCgZNJ6pPapGQQOvPb90L52yO').bucket('devs-eu-west')k
+
+curl -X PUT --data-binary @/tmp/random http://s3.amazonaws.com/devs-eu-west/random-gig
