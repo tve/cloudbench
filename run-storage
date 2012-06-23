@@ -1,19 +1,69 @@
 #! /usr/bin/env ruby
 
+require 'rubygems'
 require 'right_aws'
+require 'google_drive'
 key_id = ENV['AWS_ACCESS_KEY_ID']
 secret = ENV['AWS_SECRET_ACCESS_KEY']
-w_fmt = "STATS %http_code% %time_total% %speed_upload% %speed_download"
 
-system 'dd if=/dev/random of=/tmp/random-10m bs=1K count=10K'
-system 'dd if=/dev/random of=/tmp/random-10k bs=1K count=10'
+GS='0Aq-daXyC3OSSdFhqY1lORFdHSkdZMjJraTBKa0thQUE'
+#$gs = GoogleDrive.saved_session
+$gs = GoogleDrive::Session.new({:wise => open('.ssh_tok').gets.chomp}, nil)
+$ss = $gs.spreadsheet_by_key(GS)
+ws = "raw " + Time.now.strftime("%Y-%m")
+puts "Spreadsheet: #{$ss.title} / #{ws}"
+$sheet = $ss.worksheet_by_title(ws)
+$sheet ||= $ss.add_worksheet(ws)
 
+def append_row(gs_session, gs_sheet, row_hash={})
+  xml = '<entry xmlns="http://www.w3.org/2005/Atom" xmlns:gsx="http://schemas.google.com/spreadsheets/2006/extended">'
+  row_hash.each_pair do |k, v|
+    xml << "<gsx:#{k}>#{v}</gsx:#{k}>"
+  end
+  xml << "</entry>"
+  gs_session.request(:post, gs_sheet.list_feed_url, :data => xml)
+end
+
+w_fmt = "STATS %{http_code} %{time_total} %{speed_upload} %{speed_download}"
+
+system 'dd if=/dev/urandom of=/tmp/random-10m bs=1K count=10K'
+system 'dd if=/dev/urandom of=/tmp/random-10k bs=1K count=10'
+
+r={}
 %w{dev-us-east devs-eu-west devs-us-west}.each do |bucket|
+  r[bucket] || = {}
   b = RightAws::S3Generator.new(key_id,secret).bucket('devs-eu-west')
   %w{random-10k random-10m}.each do |file|
-    info = `curl -X PUT --data-binary @/tmp/random -w #{w_fmt} #{b.put(file)}`
-    puts "PUT #{file}", info
-    info = `curl -o /dev/null -w #{w_fmt} #{b.get(file)}`
-    puts "GET #{file}", info
+    # PUT
+    info = `curl -X PUT -T /tmp/#{file} -w '#{w_fmt}' '#{b.put(file)}'`
+    puts "PUT #{file} #{info}"
+    info = info.split(' ')
+    r[bucket]["put-"+file] || = Hash.new{|h,k| h[k] = []}
+    r[bucket]["put-"+file][:code] << info[1] if info[1] != '200'
+    r[bucket]["put-"+file][:time] << info[2].to_f if info[1] == '200'
+    r[bucket]["put-"+file][:kbs]  << info[3].to_f if info[1] == '200'
+
+    #GET
+    info = `curl -o /dev/null -w '#{w_fmt}' '#{b.get(file)}'`
+    puts "GET #{file} #{info}"
+    info = info.split(' ')
+    r[bucket]["put-"+file] || = Hash.new{|h,k| h[k] = []}
+    r[bucket]["put-"+file][:code] << info[1] if info[1] != '200'
+    r[bucket]["put-"+file][:time] << info[2].to_f if info[1] == '200'
+    r[bucket]["put-"+file][:kbs]  << info[4].to_f if info[1] == '200'
+  end
+end
+
+r.keys.each do |bucket|
+  r[bucket].keys.each do |op|
+    puts "#{bucket} #{op} => #{r[bucket][op][:code].size} errors: #{r[bucket][op][:code].join(' ')}"
+    pts = r[bucket][op][:time].size 
+    if pts > 0
+      time_avg = r[bucket][op][:time].inject(0.0){|s,t|s+=t} / pts
+      time_95  = r[bucket][op][:time].sort[pts*95/100]
+      kbs_avg  = r[bucket][op][:kbs].inject(0.0){|s,t|s+=t} / pts
+      kbs_95   r[bucket][op][:kbs].sort[pts*95/100]
+      printf("%s %s => %.1f %.1f %.0f %.0fKB/s\n", bucket, op, time_avg, time_95, kbs_avg, kbs_95)
+    end
   end
 end
