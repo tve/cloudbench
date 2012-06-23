@@ -3,9 +3,17 @@
 require 'right_aws'
 key_id = ENV['AWS_ACCESS_KEY_ID']
 secret = ENV['AWS_SECRET_ACCESS_KEY']
+w_fmt = "STATS %http_code% %time_total% %speed_upload% %speed_download"
 
-system 'dd if=/dev/random of=/tmp/random-gig bs=1K count=1M'
+system 'dd if=/dev/random of=/tmp/random-10m bs=1K count=10K'
+system 'dd if=/dev/random of=/tmp/random-10k bs=1K count=10'
 
-bucket = s3=RightAws::S3Generator.new(,'7CYJoNJkLlsw/LDdCgZNJ6pPapGQQOvPb90L52yO').bucket('devs-eu-west')k
-
-curl -X PUT --data-binary @/tmp/random http://s3.amazonaws.com/devs-eu-west/random-gig
+%w{dev-us-east devs-eu-west devs-us-west}.each do |bucket|
+  b = RightAws::S3Generator.new(key_id,secret).bucket('devs-eu-west')
+  %w{random-10k random-10m}.each do |file|
+    info = `curl -X PUT --data-binary @/tmp/random -w #{w_fmt} #{b.put(file)}`
+    puts "PUT #{file}", info
+    info = `curl -o /dev/null -w #{w_fmt} #{b.get(file)}`
+    puts "GET #{file}", info
+  end
+end
