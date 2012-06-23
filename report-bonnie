@@ -40,9 +40,12 @@ else
   t.shift
   t[0] = info[0]
   t[1] = info[1]
+  t[3] = Time.at(t[3].to_i)
 end
 
-cols = %w{cloud machine size seqwr-chr-kbs seqwr-chr-cpu seqwr-blk-kbs  seqwr-blk-cpu rewr-blk-kbs rewr-blk-cpu  seqrd-chr-kbs  seqrd-chr-cpu seqrd-blk-kbs  seqrd-blk-cpu rndseek-rate  rndseek-cpu}
+cols = %w{cloud machine concurrency time size seqwr-chr-kbs seqwr-chr-cpu seqwr-blk-kbs  seqwr-blk-cpu rewr-blk-kbs rewr-blk-cpu  seqrd-chr-kbs  seqrd-chr-cpu seqrd-blk-kbs  seqrd-blk-cpu rndseek-rate  rndseek-cpu}
+
+puts cols
 
 data = {}
 t.each_index do |i|

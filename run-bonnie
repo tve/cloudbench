@@ -5,7 +5,7 @@ mkdir -p bench/bonnie
 /usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f |
     ./cloudbench/report-bonnie $CLOUD $MACHINE c1
 /usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE c1
+    ./cloudbench/report-bonnie $CLOUD $MACHINE c8
 /usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -D |
     ./cloudbench/report-bonnie $CLOUD $MACHINE dio
 
