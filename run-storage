@@ -40,7 +40,7 @@ s3_buckets.each do |bucket|
   %w{random-10k random-10m}.each do |file|
     info = `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file+'-old')}'`
   end
-end if true
+end if false
 
 r={}
 10.times do
