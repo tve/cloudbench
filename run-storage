@@ -93,7 +93,7 @@ r.keys.each do |bucket|
       time_avg = r[bucket][op][:time].inject(0.0){|s,t|s+=t} / pts
       time_95  = r[bucket][op][:time].sort[pts*95/100]
       kbs_avg  = r[bucket][op][:kbs].inject(0.0){|s,t|s+=t} / pts
-      kbs_95   = r[bucket][op][:kbs].sort[pts*95/100]
+      kbs_95   = r[bucket][op][:kbs].sort[pts*5/100]
       printf("%s %s => %.1f %.1f %.0f %.0fKB/s\n", bucket, op, time_avg, time_95, kbs_avg, kbs_95)
 
       data = { :cloud => ENV['CLOUD'], :machine => ENV['MACHINE'], :bucket => bucket, :op => op,
