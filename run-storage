@@ -38,7 +38,7 @@ system 'dd if=/dev/urandom of=/tmp/random-10k bs=1K count=10'
 # put all the "old" files in place, this should only be run when creating fresh buckets
 s3_buckets.each do |bucket|
   if bucket.start_with?('gcs')
-    b = RightAws::S3.new(gcs_id, gcs_key).bucket(bucket)
+    b = RightAws::S3.new(gcs_id, gcs_key, :server => 'commondatastorage.googleapis.com').bucket(bucket)
     %w{random-10k random-10m}.each do |file|
       puts "===== Uploading #{file} to GCS #{bucket}"
       f = File.open("/tmp/#{file}", "r")
