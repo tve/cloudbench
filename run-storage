@@ -84,6 +84,7 @@ r={}
         when :put
           info = gcs ? gcs_put(b, file, "/tmp/#{file}") \
                      : `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file)}'`
+          puts ">> #{b.put(file)}" if !gcs
           puts "PUT #{bucket} #{file} #{info}"
           info = info.split(' ')
           r[bucket]["put-"+file] ||= Hash.new{|h,k| h[k] = []}
