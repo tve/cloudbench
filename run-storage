@@ -36,6 +36,7 @@ r={}
   %w{dev-us-east devs-eu-west devs-us-west}.each do |bucket|
     r[bucket] ||= {}
     b = RightAws::S3Generator.new(key_id,secret).bucket('devs-eu-west')
+    info = `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file)}'`
     [:put, :old, :get].each do |op|
       %w{random-10k random-10m}.each do |file|
         case op
@@ -58,7 +59,6 @@ r={}
           r[bucket]["get-"+file][:kbs]  << info[4].to_f if info[1] == '200'
 
         when :old
-          #info = `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file)}'`
           info = `curl -o /dev/null -s -w '#{w_fmt}' '#{b.get(file+"-old")}'`
           puts "GET #{file}-old #{info}"
           info = info.split(' ')
