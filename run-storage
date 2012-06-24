@@ -66,6 +66,7 @@ r={}
       end
     end
   end
+end
 
 r.keys.each do |bucket|
   r[bucket].keys.each do |op|
