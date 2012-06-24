@@ -71,7 +71,7 @@ s3_buckets.each do |bucket|
 end if false
 
 r={}
-1.times do
+10.times do
   s3_buckets.each do |bucket|
     r[bucket] ||= {}
     gcs = bucket.start_with?('gcs')
