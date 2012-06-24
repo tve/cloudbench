@@ -31,11 +31,11 @@ end
 def gcs_put(bucket, path, localpath)
   %w{random-10k random-10m}.each do |file|
     puts "===== Uploading #{file} to GCS #{bucket}"
-    f = File.open("/tmp/#{file}", "r")
-    sz = f.stat.size
+    data = IO.read("/tmp/#{file}")
     t = Time.now
-    bucket.put(file+'-old', f, {}, 'public-read')
-    f.close
+    #bucket.put(file+'-old', f, {}, 'public-read')
+    req = bucket.s3.interface.generate_rest_request('PUT', :url=>"#{bucket.name}/#{CGI::escape path}", :data=>data)
+    bucket.s3.interface.request_info(req RightHttp2xxParser.new)
     t = Time.now - t
     printf("Uploading %s took %.1f for %d bytes\n", file, t, sz)
   end
@@ -51,9 +51,7 @@ system 'dd if=/dev/urandom of=/tmp/random-10k bs=1K count=10'
 # put all the "old" files in place, this should only be run when creating fresh buckets
 s3_buckets.each do |bucket|
   if bucket.start_with?('gcs')
-    b = RightAws::S3.new(gcs_id, gcs_key, :server => 'commondatastorage.googleapis.com')
-    b.logger.level = Logger::INFO
-    b = b.bucket(bucket)
+    b = RightAws::S3.new(gcs_id, gcs_key, :server => 'commondatastorage.googleapis.com').bucket(bucket)
     %w{random-10k random-10m}.each do |file|
       puts "===== Uploading #{file} to GCS #{bucket}"
       info = gcs_put(b, file+'-old', "/tmp/#{file}")
