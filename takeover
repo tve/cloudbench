@@ -18,8 +18,9 @@ unless i_info['metadata']
 end
 
 public_ip = i_info["networkInterfaces"][0]["accessConfigs"][0]["natIP"]
-cmd = "ssh -i /home/tve/.ssh/tve-voneicken #{public_ip} -c ''"
+cmd = "ssh -i /home/tve/.ssh/tve-voneicken root@#{public_ip} 'pkill -9 collectd; pkill -9 monit; pkill -9 ruby'"
 puts cmd
+system(cmd)
 
 cmd = "gcutil adddisk #{i_name}-disk --size_gb=#{sz} --zone=#{i_info['zone']} " +
       "--wait_until_complete"

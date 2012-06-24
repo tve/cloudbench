@@ -2,26 +2,26 @@
 cd /root
 
 gem install google_drive --no-rdoc --no-ri
-if [ -d cloudbench ]; then
-  (cd cloudbench; git pull)
-else
-  git clone git://github.com/tve/cloudbench.git
-fi
-export PATH=$PATH:`pwd`/cloudbench
+#if [ -d cloudbench ]; then
+#  (cd cloudbench; git pull)
+#else
+#  git clone git://github.com/tve/cloudbench.git
+#fi
+#export PATH=$PATH:`pwd`/cloudbench
 
 # format and mount disk
 if ! [ -e bench ]; then
   if [ -e /dev/sdm ]; then
     if ! mount | egrep '/dev/sdm'; then
       mkdir -p /mnt/ebs
-      mkfs.xfs /dev/sdm
+      mkfs.ext4 -q /dev/sdm
       mount /dev/sdm /mnt/ebs
       ln -s /mnt/ebs bench
     fi
 
   elif [ -e /dev/vdb ]; then
     if ! mount | egrep '/dev/vdb'; then
-      mkfs.xfs /dev/vdb
+      mkfs.ext4 -q -f /dev/vdb
       mount /dev/vdb /mnt/ephemeral
       ln -s /mnt/ephemeral bench
     fi
