@@ -10,7 +10,7 @@ GS='0Aq-daXyC3OSSdFhqY1lORFdHSkdZMjJraTBKa0thQUE'
 #$gs = GoogleDrive.saved_session
 $gs = GoogleDrive::Session.new({:wise => open('.ssh_tok').gets.chomp}, nil)
 $ss = $gs.spreadsheet_by_key(GS)
-ws = "raw " + Time.now.strftime("%Y-%m")
+ws = "storage " + Time.now.strftime("%Y-%m")
 puts "Spreadsheet: #{$ss.title} / #{ws}"
 $sheet = $ss.worksheet_by_title(ws)
 $sheet ||= $ss.add_worksheet(ws)
@@ -70,7 +70,9 @@ end
 
 r.keys.each do |bucket|
   r[bucket].keys.each do |op|
-    puts "#{bucket} #{op} => #{r[bucket][op][:code].size} errors: #{r[bucket][op][:code].join(' ')}"
+    errs = r[bucket][op][:code].size
+    err_list = r[bucket][op][:code].join(' ')
+    puts "#{bucket} #{op} => #{errs} errors: #{err_list}"
     pts = r[bucket][op][:time].size 
     if pts > 0
       time_avg = r[bucket][op][:time].inject(0.0){|s,t|s+=t} / pts
@@ -78,6 +80,12 @@ r.keys.each do |bucket|
       kbs_avg  = r[bucket][op][:kbs].inject(0.0){|s,t|s+=t} / pts
       kbs_95   = r[bucket][op][:kbs].sort[pts*95/100]
       printf("%s %s => %.1f %.1f %.0f %.0fKB/s\n", bucket, op, time_avg, time_95, kbs_avg, kbs_95)
+
+      data = { :cloud => ENV['CLOUD'], :machine => ENV['MACHINE'], :bucket => bucket, :op => op,
+        :errors => errs, :err_list => err_list,
+        :time_avg => time_avg, :time_95 => time_95, :kbs_avg => kbs_avg, :kbs_95 => kbs_95 }
+      append_row($gs, $sheet, data)
     end
+
   end
 end
