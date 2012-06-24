@@ -68,7 +68,7 @@ s3_buckets.each do |bucket|
       info = `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file+'-old')}'`
     end
   end
-end if true
+end if false
 
 r={}
 1.times do
