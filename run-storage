@@ -42,7 +42,7 @@ s3_buckets.each do |bucket|
     %w{random-10k random-10m}.each do |file|
       puts "===== Uploading #{file} to GCS #{bucket}"
       f = File.open("/tmp/#{file}", "r")
-      sz = f.lstat
+      sz = f.size
       t = Time.now
       b.put(file+'-old', f, {}, 'public-read')
       f.close
