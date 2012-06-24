@@ -3,8 +3,10 @@
 require 'rubygems'
 require 'right_aws'
 require 'google_drive'
-key_id = ENV['AWS_ACCESS_KEY_ID']
-secret = ENV['AWS_SECRET_ACCESS_KEY']
+s3_id  = ENV['AWS_ACCESS_KEY_ID']
+s3_key = ENV['AWS_SECRET_ACCESS_KEY']
+gcs_id  = ENV['GCS_ID']
+gcs_key = ENV['GCS_KEY']
 
 GS='0Aq-daXyC3OSSdFhqY1lORFdHSkdZMjJraTBKa0thQUE'
 #$gs = GoogleDrive.saved_session
@@ -28,25 +30,28 @@ end
 
 w_fmt = "STATS %{http_code} %{time_total} %{speed_upload} %{speed_download}"
 
-s3_buckets = %w{s3-us-east s3-us-oregon s3-europe s3-ap-singapore s3-ap-tokyo s3-sa-saopaulo}
+s3_buckets = %w{gcs_us gcs_eu s3-us-east s3-us-oregon s3-europe s3-ap-singapore s3-ap-tokyo s3-sa-saopaulo}
 
 system 'dd if=/dev/urandom of=/tmp/random-10m bs=1K count=10K'
 system 'dd if=/dev/urandom of=/tmp/random-10k bs=1K count=10'
 
-
 # put all the "old" files in place, this should only be run when creating fresh buckets
 s3_buckets.each do |bucket|
-  b = RightAws::S3Generator.new(key_id,secret).bucket(bucket)
+  b = bucket.start_with?('gcs') ? RightAws::S3Generator.new(gcs_id, gcs_key, :server => 'commondatastorage.googleapis.com')
+                                : RightAws::S3Generator.new(s3_id, s3_key)
+  b = b.bucket(bucket)
   %w{random-10k random-10m}.each do |file|
     info = `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file+'-old')}'`
   end
 end if false
 
 r={}
-10.times do
-  %w{s3-us-east s3-us-oregon s3-europe s3-ap-singapore s3-ap-tokyo s3-sa-saopaulo}.each do |bucket|
+1.times do
+  s3_buckets.each do |bucket|
     r[bucket] ||= {}
-    b = RightAws::S3Generator.new(key_id,secret).bucket(bucket)
+    b = bucket.start_with?('gcs') ? RightAws::S3Generator.new(gcs_id, gcs_key, :server => 'commondatastorage.googleapis.com')
+                                  : RightAws::S3Generator.new(s3_id, s3_key)
+    b = b.bucket(bucket)
     [:put, :old, :get].each do |op|
       %w{random-10k random-10m}.each do |file|
         case op
