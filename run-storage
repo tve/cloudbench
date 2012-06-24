@@ -28,6 +28,19 @@ def append_row(gs_session, gs_sheet, row_hash={})
   gs_session.request(:post, gs_sheet.list_feed_url, :data => xml)
 end
 
+def gcs_put(bucket, path, localpath)
+  %w{random-10k random-10m}.each do |file|
+    puts "===== Uploading #{file} to GCS #{bucket}"
+    f = File.open("/tmp/#{file}", "r")
+    sz = f.stat.size
+    t = Time.now
+    bucket.put(file+'-old', f, {}, 'public-read')
+    f.close
+    t = Time.now - t
+    printf("Uploading %s took %.1f for %d bytes\n", file, t, sz)
+  end
+end
+
 w_fmt = "STATS %{http_code} %{time_total} %{speed_upload} %{speed_download}"
 
 s3_buckets = %w{gcs-us gcs-eu s3-us-east s3-us-oregon s3-europe s3-ap-singapore s3-ap-tokyo s3-sa-saopaulo}
@@ -38,16 +51,12 @@ system 'dd if=/dev/urandom of=/tmp/random-10k bs=1K count=10'
 # put all the "old" files in place, this should only be run when creating fresh buckets
 s3_buckets.each do |bucket|
   if bucket.start_with?('gcs')
-    b = RightAws::S3.new(gcs_id, gcs_key, :server => 'commondatastorage.googleapis.com').bucket(bucket)
+    b = RightAws::S3.new(gcs_id, gcs_key, :server => 'commondatastorage.googleapis.com')
+    b.logger.level = Logger::INFO
+    b = b.bucket(bucket)
     %w{random-10k random-10m}.each do |file|
       puts "===== Uploading #{file} to GCS #{bucket}"
-      f = File.open("/tmp/#{file}", "r")
-      sz = f.stat.size
-      t = Time.now
-      b.put(file+'-old', f, {}, 'public-read')
-      f.close
-      t = Time.now - t
-      printf("Uploading %s took %.1f for %d bytes\n", file, t, sz)
+      info = gcs_put(b, file+'-old', "/tmp/#{file}")
     end
   else
     b = RightAws::S3Generator.new(s3_id, s3_key).bucket(bucket)
