@@ -31,14 +31,14 @@ system 'dd if=/dev/urandom of=/tmp/random-10k bs=1K count=10'
 
 r={}
 %w{dev-us-east devs-eu-west devs-us-west}.each do |bucket|
-  r[bucket] || = {}
+  r[bucket] ||= {}
   b = RightAws::S3Generator.new(key_id,secret).bucket('devs-eu-west')
   %w{random-10k random-10m}.each do |file|
     # PUT
     info = `curl -X PUT -T /tmp/#{file} -w '#{w_fmt}' '#{b.put(file)}'`
     puts "PUT #{file} #{info}"
     info = info.split(' ')
-    r[bucket]["put-"+file] || = Hash.new{|h,k| h[k] = []}
+    r[bucket]["put-"+file] ||= Hash.new{|h,k| h[k] = []}
     r[bucket]["put-"+file][:code] << info[1] if info[1] != '200'
     r[bucket]["put-"+file][:time] << info[2].to_f if info[1] == '200'
     r[bucket]["put-"+file][:kbs]  << info[3].to_f if info[1] == '200'
@@ -47,7 +47,7 @@ r={}
     info = `curl -o /dev/null -w '#{w_fmt}' '#{b.get(file)}'`
     puts "GET #{file} #{info}"
     info = info.split(' ')
-    r[bucket]["put-"+file] || = Hash.new{|h,k| h[k] = []}
+    r[bucket]["put-"+file] ||= Hash.new{|h,k| h[k] = []}
     r[bucket]["put-"+file][:code] << info[1] if info[1] != '200'
     r[bucket]["put-"+file][:time] << info[2].to_f if info[1] == '200'
     r[bucket]["put-"+file][:kbs]  << info[4].to_f if info[1] == '200'
