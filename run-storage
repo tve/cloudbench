@@ -84,7 +84,7 @@ r={}
         when :put
           info = gcs ? gcs_put(b, file, "/tmp/#{file}") \
                      : `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file)}'`
-          puts "PUT #{file} #{info}"
+          puts "PUT #{bucket} #{file} #{info}"
           info = info.split(' ')
           r[bucket]["put-"+file] ||= Hash.new{|h,k| h[k] = []}
           r[bucket]["put-"+file][:code] << info[1] if info[1] != '200'
@@ -94,7 +94,7 @@ r={}
         when :get
           info = gcs ? `curl -o /dev/null -s -w '#{w_fmt}' 'https://#{bucket}.commondatastorage.googleapis.com/#{file}'` \
                      : `curl -o /dev/null -s -w '#{w_fmt}' '#{b.get(file)}'`
-          puts "GET #{file} #{info}"
+          puts "GET #{bucket} #{file} #{info}"
           info = info.split(' ')
           r[bucket]["get-"+file] ||= Hash.new{|h,k| h[k] = []}
           r[bucket]["get-"+file][:code] << info[1] if info[1] != '200'
@@ -104,7 +104,7 @@ r={}
         when :old
           info = gcs ? `curl -o /dev/null -s -w '#{w_fmt}' 'https://#{bucket}.commondatastorage.googleapis.com/#{file}-old'` \
                      : `curl -o /dev/null -s -w '#{w_fmt}' '#{b.get(file+"-old")}'`
-          puts "GET #{file}-old #{info}"
+          puts "GET #{bucket} #{file}-old #{info}"
           info = info.split(' ')
           r[bucket]["old-"+file] ||= Hash.new{|h,k| h[k] = []}
           r[bucket]["old-"+file][:code] << info[1] if info[1] != '200'
