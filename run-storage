@@ -30,7 +30,7 @@ end
 
 w_fmt = "STATS %{http_code} %{time_total} %{speed_upload} %{speed_download}"
 
-s3_buckets = %w{gcs_us gcs_eu s3-us-east s3-us-oregon s3-europe s3-ap-singapore s3-ap-tokyo s3-sa-saopaulo}
+s3_buckets = %w{gcs-us gcs-eu s3-us-east s3-us-oregon s3-europe s3-ap-singapore s3-ap-tokyo s3-sa-saopaulo}
 
 system 'dd if=/dev/urandom of=/tmp/random-10m bs=1K count=10K'
 system 'dd if=/dev/urandom of=/tmp/random-10k bs=1K count=10'
