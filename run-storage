@@ -69,20 +69,21 @@ s3_buckets.each do |bucket|
     end
   end
 end if true
-exit
 
 r={}
 1.times do
   s3_buckets.each do |bucket|
     r[bucket] ||= {}
-    b = bucket.start_with?('gcs') ? RightAws::S3Generator.new(gcs_id, gcs_key, :server => 'commondatastorage.googleapis.com') \
-                                  : RightAws::S3Generator.new(s3_id, s3_key)
+    gcs = bucket.start_with?('gcs')
+    b = gcs ? RightAws::S3.new(gcs_id, gcs_key, :server => 'commondatastorage.googleapis.com') \
+            : RightAws::S3Generator.new(s3_id, s3_key)
     b = b.bucket(bucket)
     [:put, :old, :get].each do |op|
       %w{random-10k random-10m}.each do |file|
         case op
         when :put
-          info = `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file)}'`
+          info = gcs ? gcs_put(b, file, "/tmp/#{file}") \
+                     : `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file)}'`
           puts "PUT #{file} #{info}"
           info = info.split(' ')
           r[bucket]["put-"+file] ||= Hash.new{|h,k| h[k] = []}
@@ -91,7 +92,8 @@ r={}
           r[bucket]["put-"+file][:kbs]  << info[3].to_f if info[1] == '200'
 
         when :get
-          info = `curl -o /dev/null -s -w '#{w_fmt}' '#{b.get(file)}'`
+          info = gcs ? `curl -o /dev/null -s -w '#{w_fmt}' 'https://#{bucket}.commondatastorage.googleapis.com/#{file}'` \
+                     : `curl -o /dev/null -s -w '#{w_fmt}' '#{b.get(file)}'`
           puts "GET #{file} #{info}"
           info = info.split(' ')
           r[bucket]["get-"+file] ||= Hash.new{|h,k| h[k] = []}
@@ -100,7 +102,8 @@ r={}
           r[bucket]["get-"+file][:kbs]  << info[4].to_f if info[1] == '200'
 
         when :old
-          info = `curl -o /dev/null -s -w '#{w_fmt}' '#{b.get(file+"-old")}'`
+          info = gcs ? `curl -o /dev/null -s -w '#{w_fmt}' 'https://#{bucket}.commondatastorage.googleapis.com/#{file}-old'` \
+                     : `curl -o /dev/null -s -w '#{w_fmt}' '#{b.get(file+"-old")}'`
           puts "GET #{file}-old #{info}"
           info = info.split(' ')
           r[bucket]["old-"+file] ||= Hash.new{|h,k| h[k] = []}
