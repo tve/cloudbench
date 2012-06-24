@@ -33,7 +33,6 @@ s3_buckets = %w{s3-us-east s3-us-oregon s3-europe s3-ap-singapore s3-ap-tokyo s3
 system 'dd if=/dev/urandom of=/tmp/random-10m bs=1K count=10K'
 system 'dd if=/dev/urandom of=/tmp/random-10k bs=1K count=10'
 
-r={}
 
 # put all the "old" files in place, this should only be run when creating fresh buckets
 s3_buckets.each do |bucket|
@@ -43,6 +42,7 @@ s3_buckets.each do |bucket|
   end
 end if true
 
+r={}
 10.times do
   %w{s3-us-east s3-us-oregon s3-europe s3-ap-singapore s3-ap-tokyo s3-sa-saopaulo}.each do |bucket|
     r[bucket] ||= {}
