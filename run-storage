@@ -36,7 +36,7 @@ system 'dd if=/dev/urandom of=/tmp/random-10k bs=1K count=10'
 
 # put all the "old" files in place, this should only be run when creating fresh buckets
 s3_buckets.each do |bucket|
-  b = RightAws::S3Generator.new(key_id,secret).bucket('devs-eu-west')
+  b = RightAws::S3Generator.new(key_id,secret).bucket(bucket)
   %w{random-10k random-10m}.each do |file|
     info = `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file+'-old')}'`
   end
@@ -46,7 +46,7 @@ r={}
 10.times do
   %w{s3-us-east s3-us-oregon s3-europe s3-ap-singapore s3-ap-tokyo s3-sa-saopaulo}.each do |bucket|
     r[bucket] ||= {}
-    b = RightAws::S3Generator.new(key_id,secret).bucket('devs-eu-west')
+    b = RightAws::S3Generator.new(key_id,secret).bucket(bucket)
     [:put, :old, :get].each do |op|
       %w{random-10k random-10m}.each do |file|
         case op
