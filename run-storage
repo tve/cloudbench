@@ -33,7 +33,7 @@ def gcs_put(bucket, path, localpath)
   data = IO.read(localpath)
   t = Time.now
   #bucket.put(file+'-old', f, {}, 'public-read')
-  req = bucket.s3.interface.generate_rest_request('PUT', :url=>"#{bucket.name}/#{CGI::escape path}", :data=>data)
+  req = bucket.s3.interface.generate_rest_request('PUT', :url=>"#{bucket.name}/#{CGI::escape path}", :"x-amz-acl" => 'public-read', :data=>data)
   res = bucket.s3.interface.request_info(req, RightAws::RightHttp2xxParser.new)
   t = Time.now - t
   printf("Uploading %s took %.1f for %d bytes --> %s\n", path, t, data.size, res.inspect)
