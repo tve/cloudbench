@@ -33,7 +33,7 @@ system 'dd if=/dev/urandom of=/tmp/random-10k bs=1K count=10'
 
 r={}
 10.times do
-  %w{dev-us-east devs-eu-west devs-us-west}.each do |bucket|
+  %w{s3-us-east s3-us-oregon s3-europe s3-ap-singapore s3-ap-tokyo s3-sa-saopaulo}.each do |bucket|
     r[bucket] ||= {}
     b = RightAws::S3Generator.new(key_id,secret).bucket('devs-eu-west')
     info = `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file)}'`
