@@ -29,16 +29,21 @@ def append_row(gs_session, gs_sheet, row_hash={})
 end
 
 def gcs_put(bucket, path, localpath)
-  puts "===== Uploading #{path} to GCS #{bucket}"
   data = IO.read(localpath)
   t = Time.now
   #bucket.put(file+'-old', f, {}, 'public-read')
   req = bucket.s3.interface.generate_rest_request('PUT', :url=>"#{bucket.name}/#{CGI::escape path}",
                                                   'x-amz-acl' => 'public-read', :data=>data)
-  res = bucket.s3.interface.request_info(req, RightAws::RightHttp2xxParser.new)
+  code = begin
+    bucket.s3.interface.request_info(req, RightAws::RightHttp2xxParser.new)
+    '200'
+  rescue AwsError => e
+    puts e.message
+    e.http_code
+  end
   t = Time.now - t
   printf("Uploading %s took %.1f for %d bytes --> %s\n", path, t, data.size, res.inspect)
-  "STATS 200 #{t} #{data.size/t} 0"
+  "STATS #{code} #{t} #{data.size/t} 0"
 end
 
 w_fmt = "STATS %{http_code} %{time_total} %{speed_upload} %{speed_download}"
@@ -53,13 +58,13 @@ s3_buckets.each do |bucket|
   if bucket.start_with?('gcs')
     b = RightAws::S3.new(gcs_id, gcs_key, :server => 'commondatastorage.googleapis.com').bucket(bucket)
     %w{random-10k random-10m}.each do |file|
-      puts "===== Uploading #{file} to GCS #{bucket}"
+      puts "===== Uploading #{file}-old to GCS #{bucket}"
       info = gcs_put(b, file+'-old', "/tmp/#{file}")
     end
   else
     b = RightAws::S3Generator.new(s3_id, s3_key).bucket(bucket)
     %w{random-10k random-10m}.each do |file|
-      puts "===== Uploading #{file} to S3 #{bucket}"
+      puts "===== Uploading #{file}-old to S3 #{bucket}"
       info = `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file+'-old')}'`
     end
   end
