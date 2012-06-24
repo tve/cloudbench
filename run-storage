@@ -42,7 +42,7 @@ def gcs_put(bucket, path, localpath)
     e.http_code
   end
   t = Time.now - t
-  printf("Uploading %s took %.1f for %d bytes --> %s\n", path, t, data.size, res.inspect)
+  printf("Uploading %s took %.1f for %d bytes --> %s\n", path, t, data.size)
   "STATS #{code} #{t} #{data.size/t} 0"
 end
 
@@ -69,8 +69,6 @@ s3_buckets.each do |bucket|
     end
   end
 end if true
-
-exit
 
 r={}
 1.times do
