@@ -33,26 +33,39 @@ r={}
 %w{dev-us-east devs-eu-west devs-us-west}.each do |bucket|
   r[bucket] ||= {}
   b = RightAws::S3Generator.new(key_id,secret).bucket('devs-eu-west')
-  %w{random-10k random-10m}.each do |file|
-    # PUT
-    info = `curl -X PUT -T /tmp/#{file} -w '#{w_fmt}' '#{b.put(file)}'`
-    puts "PUT #{file} #{info}"
-    info = info.split(' ')
-    r[bucket]["put-"+file] ||= Hash.new{|h,k| h[k] = []}
-    r[bucket]["put-"+file][:code] << info[1] if info[1] != '200'
-    r[bucket]["put-"+file][:time] << info[2].to_f if info[1] == '200'
-    r[bucket]["put-"+file][:kbs]  << info[3].to_f if info[1] == '200'
+  [:put, :old, :get].each do |op|
+    %w{random-10k random-10m}.each do |file|
+      case op
+      when :put
+        info = `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file+"-old")}'`
+        puts "PUT #{file} #{info}"
+        info = info.split(' ')
+        r[bucket]["put-"+file] ||= Hash.new{|h,k| h[k] = []}
+        r[bucket]["put-"+file][:code] << info[1] if info[1] != '200'
+        r[bucket]["put-"+file][:time] << info[2].to_f if info[1] == '200'
+        r[bucket]["put-"+file][:kbs]  << info[3].to_f if info[1] == '200'
 
-    #GET
-    info = `curl -o /dev/null -w '#{w_fmt}' '#{b.get(file)}'`
-    puts "GET #{file} #{info}"
-    info = info.split(' ')
-    r[bucket]["put-"+file] ||= Hash.new{|h,k| h[k] = []}
-    r[bucket]["put-"+file][:code] << info[1] if info[1] != '200'
-    r[bucket]["put-"+file][:time] << info[2].to_f if info[1] == '200'
-    r[bucket]["put-"+file][:kbs]  << info[4].to_f if info[1] == '200'
+      when :get
+        info = `curl -o /dev/null -s -w '#{w_fmt}' '#{b.get(file)}'`
+        puts "GET #{file} #{info}"
+        info = info.split(' ')
+        r[bucket]["get-"+file] ||= Hash.new{|h,k| h[k] = []}
+        r[bucket]["get-"+file][:code] << info[1] if info[1] != '200'
+        r[bucket]["get-"+file][:time] << info[2].to_f if info[1] == '200'
+        r[bucket]["get-"+file][:kbs]  << info[4].to_f if info[1] == '200'
+
+      when :old
+        info = `curl -o /dev/null -s -w '#{w_fmt}' '#{b.get(file+"-old")}'`
+        puts "GET #{file}-old #{info}"
+        info = info.split(' ')
+        r[bucket]["old-"+file] ||= Hash.new{|h,k| h[k] = []}
+        r[bucket]["old-"+file][:code] << info[1] if info[1] != '200'
+        r[bucket]["old-"+file][:time] << info[2].to_f if info[1] == '200'
+        r[bucket]["old-"+file][:kbs]  << info[4].to_f if info[1] == '200'
+
+      end
+    end
   end
-end
 
 r.keys.each do |bucket|
   r[bucket].keys.each do |op|
