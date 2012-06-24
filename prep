@@ -21,7 +21,7 @@ if ! [ -e bench ]; then
 
   elif [ -e /dev/vdb ]; then
     if ! mount | egrep '/dev/vdb'; then
-      mkfs.ext4 -q -f /dev/vdb
+      mkfs.ext4 -q /dev/vdb
       mount /dev/vdb /mnt/ephemeral
       ln -s /mnt/ephemeral bench
     fi
