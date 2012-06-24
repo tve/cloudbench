@@ -35,7 +35,7 @@ def gcs_put(bucket, path, localpath)
     t = Time.now
     #bucket.put(file+'-old', f, {}, 'public-read')
     req = bucket.s3.interface.generate_rest_request('PUT', :url=>"#{bucket.name}/#{CGI::escape path}", :data=>data)
-    bucket.s3.interface.request_info(req RightHttp2xxParser.new)
+    bucket.s3.interface.request_info(req, RightAws::RightHttp2xxParser.new)
     t = Time.now - t
     printf("Uploading %s took %.1f for %d bytes\n", file, t, sz)
   end
