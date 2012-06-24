@@ -40,6 +40,7 @@ s3_buckets.each do |bucket|
   if bucket.start_with?('gcs')
     b = RightAws::S3.new(gcs_id, gcs_key).bucket(bucket)
     %w{random-10k random-10m}.each do |file|
+      puts "===== Uploading #{file} to GCS #{bucket}"
       f = File.open("/tmp/#{file}", "r")
       sz = f.lstat
       t = Time.now
@@ -51,6 +52,7 @@ s3_buckets.each do |bucket|
   else
     b = RightAws::S3Generator.new(s3_id, s3_key).bucket(bucket)
     %w{random-10k random-10m}.each do |file|
+      puts "===== Uploading #{file} to S3 #{bucket}"
       info = `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file+'-old')}'`
     end
   end
