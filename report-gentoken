@@ -1,0 +1,10 @@
+#! /usr/bin/env ruby
+require 'rubygems'
+require 'google_drive'
+
+$gs = GoogleDrive.saved_session('.ssh_tok')
+GS='0Aq-daXyC3OSSdFhqY1lORFdHSkdZMjJraTBKa0thQUE'
+$ss = $gs.spreadsheet_by_key(GS)
+$ss.worksheets.inspect
+system "head -1 .ssh_tok"
+

@@ -1,4 +1,4 @@
-#! /bin/bash -e
+#! /bin/bash -ex
 cd /root
 
 gem install google_drive --no-rdoc --no-ri
@@ -14,14 +14,14 @@ if ! [ -e bench ]; then
   if [ -e /dev/sdm ]; then
     if ! mount | egrep '/dev/sdm'; then
       mkdir -p /mnt/ebs
-      mkfs.ext4 -q /dev/sdm
+      mkfs.ext4 -F -q /dev/sdm
       mount /dev/sdm /mnt/ebs
       ln -s /mnt/ebs bench
     fi
 
   elif [ -e /dev/vdb ]; then
     if ! mount | egrep '/dev/vdb'; then
-      mkfs.ext4 -q /dev/vdb
+      mkfs.ext4 -F -q /dev/vdb
       mount /dev/vdb /mnt/ephemeral
       ln -s /mnt/ephemeral bench
     fi

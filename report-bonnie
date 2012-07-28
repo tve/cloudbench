@@ -22,7 +22,7 @@ end
 
 info=ARGV
 #puts info.join(' ')
-t={}
+t=[]
 v=nil
 while line = STDIN.gets
   puts line.chomp
@@ -33,17 +33,14 @@ while line = STDIN.gets
   end
 end
 
-if v == '1.03'
-  t[0] = info[1]
-  t.unshift info[0]
-else
-  t.shift
+if v == '1.96'
   t[0] = info[0]
   t[1] = info[1]
-  t[3] = Time.at(t[3].to_i).strftime("%Y/%m/%d %H:%M")
+  t[2] = info[2]||""
+  t[4] = Time.at(t[4].to_i).strftime("%Y/%m/%d %H:%M")
 end
 
-cols = %w{cloud machine concurrency time size files
+cols = %w{cloud machine options concurrency time size files
     seqwr-chr-kbs seqwr-chr-cpu seqwr-blk-kbs seqwr-blk-cpu rewr-blk-kbs rewr-blk-cpu
     seqrd-chr-kbs seqrd-chr-cpu seqrd-blk-kbs seqrd-blk-cpu rndseek-rate rndseek-cpu}
 

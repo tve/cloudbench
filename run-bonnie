@@ -5,18 +5,16 @@ mkdir -p bench/bonnie
 #/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f |
 #    ./cloudbench/report-bonnie $CLOUD $MACHINE
 /usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE
+    ./cloudbench/report-bonnie $CLOUD $MACHINE c8
 /usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE
+    ./cloudbench/report-bonnie $CLOUD $MACHINE c8
 /usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE
+    ./cloudbench/report-bonnie $CLOUD $MACHINE c8
 /usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE
-#/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 16 |
-#    ./cloudbench/report-bonnie $CLOUD $MACHINE
-
-#/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -D |
-#    ./cloudbench/report-bonnie $CLOUD $MACHINE dio
-
-#/usr/sbin/bonnie++ -d bonnie -u 0:0 -s 130000 |
-#    ./cloudbench/report-bonnie $CLOUD $MACHINE bonnie-130G
+    ./cloudbench/report-bonnie $CLOUD $MACHINE c8
+/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 16 |
+    ./cloudbench/report-bonnie $CLOUD $MACHINE c16
+/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -D |
+    ./cloudbench/report-bonnie $CLOUD $MACHINE c8-D
+/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -r 0 -s 40000 |
+    ./cloudbench/report-bonnie $CLOUD $MACHINE c8-40G
