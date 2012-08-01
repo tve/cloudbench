@@ -11,11 +11,11 @@ gem install google_drive --no-rdoc --no-ri
 
 # format and mount disk
 if ! [ -e bench ]; then
-  if [ -e /dev/sdm ]; then
-    if ! mount | egrep '/dev/sdm'; then
+  if [ -e /dev/xvdq ]; then
+    if ! mount | egrep '/dev/xvdq'; then
       mkdir -p /mnt/ebs
-      mkfs.ext4 -F -q /dev/sdm
-      mount /dev/sdm /mnt/ebs
+      mkfs.ext4 -F -q /dev/xvdq
+      mount /dev/xvdq /mnt/ebs
       ln -s /mnt/ebs bench
     fi
 
@@ -23,6 +23,20 @@ if ! [ -e bench ]; then
     if ! mount | egrep '/dev/vdb'; then
       mkfs.ext4 -F -q /dev/vdb
       mount /dev/vdb /mnt/ephemeral
+      ln -s /mnt/ephemeral bench
+    fi
+
+  elif [ -e /dev/xvda ]; then # RAX
+    if ! mount | egrep xvda2; then
+      /sbin/parted -s /dev/xvda mkpart primary 10200547328B 81604378622B
+      /sbin/mkfs.xfs /dev/xvda2
+
+      wget http://www.coker.com.au/bonnie++/experimental/bonnie++-1.96.tgz
+      tar zxf bonnie++-1.96.tgz
+      cd bonnie++-1.96
+      ./configure --prefix=/usr
+      make install
+
       ln -s /mnt/ephemeral bench
     fi
 

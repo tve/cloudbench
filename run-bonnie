@@ -4,17 +4,17 @@ cd /root
 mkdir -p bench/bonnie
 #/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f |
 #    ./cloudbench/report-bonnie $CLOUD $MACHINE
-/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE c8
-/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE c8
-/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE c8
-/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE c8
-/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 16 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE c16
-/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -D |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE c8-D
-/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -r 0 -s 40000 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE c8-40G
+/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -s 70000 |
+    ./cloudbench/report-bonnie $CLOUD $MACHINE c8-70G
+/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -s 70000 |
+    ./cloudbench/report-bonnie $CLOUD $MACHINE c8-70G
+/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -s 70000 |
+    ./cloudbench/report-bonnie $CLOUD $MACHINE c8-70G
+/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -s 70000 |
+    ./cloudbench/report-bonnie $CLOUD $MACHINE c8-70G
+/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 16 -s 70000 |
+    ./cloudbench/report-bonnie $CLOUD $MACHINE c16-70G
+#/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -D -s 40000 |
+#    ./cloudbench/report-bonnie $CLOUD $MACHINE 70G-D
+#/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -r 0 -s 40000 |
+#    ./cloudbench/report-bonnie $CLOUD $MACHINE 40G
