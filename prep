@@ -18,7 +18,7 @@ ec2)
   fi
   ;;
 
-gce)
+google)
   if [ -e /dev/vdb ]; then
     if ! mount | egrep '/dev/vdb'; then
       mkfs.ext4 -F -q /dev/vdb
@@ -27,7 +27,7 @@ gce)
   fi
   ;;
 
-rax)
+rackspace)
   if [ -e /dev/xvda ]; then
     if ! mount | egrep xvda2; then
       yum install e4fsprogs.x86_64 -y
