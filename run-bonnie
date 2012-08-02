@@ -1,19 +1,32 @@
 #! /bin/bash
 set -x
 cd /root
-mkdir -p bench/bonnie
+gb_mem=`ruby -n -e '$_ =~ /MemTotal/ && puts($_.split[1].to_i/1024/1024)' /proc/meminfo`
+if [ $gb_mem < 20 ]; then
+  sz="-s 40g"
+fi
+
+for i in 1 2 3; do
+
+  if [ -d /mnt/ephemeral ]; then
+    cd /mnt/ephemeral
+    /usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 $sz |
+      ./cloudbench/report-bonnie $CLOUD-$MACHINE local
+  fi
+  
+  if [ -d /mnt/ebs ]; then
+    cd /mnt/ebs
+    /usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 $sz |
+      ./cloudbench/report-bonnie $CLOUD-$MACHINE local
+  fi
+
+done
+
+
+#/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 16 -s 70000 |
+#    ./cloudbench/report-bonnie $CLOUD $MACHINE c16-70G
 #/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f |
 #    ./cloudbench/report-bonnie $CLOUD $MACHINE
-/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -s 70000 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE c8-70G
-/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -s 70000 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE c8-70G
-/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -s 70000 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE c8-70G
-/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -s 70000 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE c8-70G
-/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 16 -s 70000 |
-    ./cloudbench/report-bonnie $CLOUD $MACHINE c16-70G
 #/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -D -s 40000 |
 #    ./cloudbench/report-bonnie $CLOUD $MACHINE 70G-D
 #/usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 -r 0 -s 40000 |

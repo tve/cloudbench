@@ -1,50 +1,46 @@
 #! /bin/bash -ex
 cd /root
+cloud=`cat /etc/rightscale/cloud`
 
 gem install google_drive --no-rdoc --no-ri
-#if [ -d cloudbench ]; then
-#  (cd cloudbench; git pull)
-#else
-#  git clone git://github.com/tve/cloudbench.git
-#fi
-#export PATH=$PATH:`pwd`/cloudbench
 
 # format and mount disk
-if ! [ -e bench ]; then
+case $cloud in
+
+ec2)
   if [ -e /dev/xvdq ]; then
     if ! mount | egrep '/dev/xvdq'; then
       mkdir -p /mnt/ebs
       mkfs.ext4 -F -q /dev/xvdq
       mount /dev/xvdq /mnt/ebs
-      ln -s /mnt/ebs bench
     fi
+  fi
+  ;;
 
-  elif [ -e /dev/vdb ]; then
+gce-not)
+  if [ -e /dev/vdb ]; then
     if ! mount | egrep '/dev/vdb'; then
       mkfs.ext4 -F -q /dev/vdb
       mount /dev/vdb /mnt/ephemeral
-      ln -s /mnt/ephemeral bench
     fi
+  fi
+  ;;
 
-  elif [ -e /dev/xvda ]; then # RAX
+rax-not)
+  if [ -e /dev/xvda ]; then
     if ! mount | egrep xvda2; then
       /sbin/parted -s /dev/xvda mkpart primary 10200547328B 81604378622B
       /sbin/mkfs.xfs /dev/xvda2
+      mount /dev/xvda2 /mnt/ephemeral
 
       wget http://www.coker.com.au/bonnie++/experimental/bonnie++-1.96.tgz
       tar zxf bonnie++-1.96.tgz
       cd bonnie++-1.96
       ./configure --prefix=/usr
       make install
-
-      ln -s /mnt/ephemeral bench
     fi
-
-  elif mount | egrep '/mnt/ephemeral'; then
-    ln -s /mnt/ephemeral bench
-
   fi
-fi
+
+esac
 
 df -h
-ls -lsL bench
