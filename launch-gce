@@ -68,10 +68,20 @@ File.open(".rsrc", "w") do |f| JSON.dump($system, f) end
 #
 
 account_id = $client.instance_variable_get '@account_id'
-deployment = $client.deployments.index(:filter => ["name==#{$deployment_name}"])[0].show
+deployment = $client.deployments.index(:filter => ["name==#{$deployment_name}"])
+unless deployment && deployment.size > 0
+  puts "Can't find deployment #{$deployment_name}"
+  exit 1
+end
+deployment = deployment[0].show
 servers    = $client.servers.index(:filter => ["deployment_href==#{deployment.href}",
                                                "name==#{$server_name}"])
-server     = servers.select{|s| s.name == $server_name}[0].show
+server     = (servers||[]).select{|s| s.name == $server_name}
+unless server && server.size > 0
+  puts "Can't find server matching #{$server_name}"
+  exit 1
+end
+server     = servers[0].show
 server_id  = server.href.split('/').last
 next_i     = server.next_instance.show
 
@@ -87,20 +97,53 @@ rescue RightApi::Exceptions::ApiException => e
     raise
   end
 end
-
 server = $client.servers(:id => new_id).show
+
+#
+# Helper functions
+#
+
+def launch(server)
+  puts "Launching #{server.next_instance.show.cloud.show.cloud_type} server"
+  #puts server.show(:foo=>'foo').inspect
+  server.launch
+  sleep 1
+  while server.show(:foo=>'foo').state == 'inactive'
+    puts "    Waiting for server #{server.name} to get going..."
+    sleep 10
+  end
+  puts "    Server is launching => #{server.name} #{server.href}"
+end
+
+def finish(server)
+  while server.show(:foo=>'foo').state != 'inactive'
+    puts "    Waiting for server #{server.name} to terminate..."
+    sleep 300
+  end
+  puts "Deleting RAX server"
+  server.destroy
+end
 
 case next_i.cloud.show.cloud_type
 
 when "sunrise", "google"
-  puts "Launching GCE server"
-  $server.launch
-
+  launch(server)
+  finish(server)
+  puts "Done!"
 
 when "rackspace"
-  puts "Launching RAX server"
-  $server.launch
-  puts "Waiting for server to be non-terminated"
+  launch(server)
+  finish(server)
+  puts "Done!"
+
+when "azure"
+  launch(server)
+  finish(server)
+  puts "Done!"
+
+else
+  puts "Dunno what to do with cloud #{next_i.cloud.show.cloud_type}"
+  exit 1
 
 end
 
