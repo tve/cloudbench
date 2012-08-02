@@ -2,7 +2,8 @@
 set -x
 cd /root
 gb_mem=`ruby -n -e '$_ =~ /MemTotal/ && puts($_.split[1].to_i/1024/1024)' /proc/meminfo`
-if [ $gb_mem < 20 ]; then
+sz=
+if [ $gb_mem -lt 20 ]; then
   sz="-s 40g"
 fi
 
