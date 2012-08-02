@@ -11,13 +11,15 @@ for i in 1 2 3; do
 
   if [ -d /mnt/ephemeral ]; then
     cd /mnt/ephemeral
-    /usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 $sz |
+    mkdir -p bonnie
+    /usr/sbin/bonnie++ -d bonnie -u 0:0 -n 0 -f -c 8 $sz |
       ./cloudbench/report-bonnie $CLOUD-$MACHINE local
   fi
   
   if [ -d /mnt/ebs ]; then
     cd /mnt/ebs
-    /usr/sbin/bonnie++ -d bench/bonnie -u 0:0 -n 0 -f -c 8 $sz |
+    mkdir -p bonnie
+    /usr/sbin/bonnie++ -d bonnie -u 0:0 -n 0 -f -c 8 $sz |
       ./cloudbench/report-bonnie $CLOUD-$MACHINE local
   fi
 
