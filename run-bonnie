@@ -13,14 +13,14 @@ for i in 1 2 3; do
     cd /mnt/ephemeral
     mkdir -p bonnie
     /usr/sbin/bonnie++ -d bonnie -u 0:0 -n 0 -f -c 8 $sz |
-      ./cloudbench/report-bonnie $CLOUD-$MACHINE local
+      /root/cloudbench/report-bonnie $CLOUD-$MACHINE local
   fi
   
   if [ -d /mnt/ebs ]; then
     cd /mnt/ebs
     mkdir -p bonnie
     /usr/sbin/bonnie++ -d bonnie -u 0:0 -n 0 -f -c 8 $sz |
-      ./cloudbench/report-bonnie $CLOUD-$MACHINE local
+      /root/cloudbench/report-bonnie $CLOUD-$MACHINE local
   fi
 
 done
