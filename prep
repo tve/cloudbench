@@ -1,6 +1,6 @@
 #! /bin/bash -ex
 cd /root
-cloud=`cat /etc/rightscale/cloud`
+cloud=`cat /etc/rightscale.d/cloud`
 
 gem install google_drive --no-rdoc --no-ri
 
