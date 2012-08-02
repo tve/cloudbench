@@ -1,5 +1,108 @@
 #!/usr/bin/env ruby
 
-require 'right_api_client'
+#require 'right_api_client'
+require File.expand_path('../../right_api_client/lib/right_api_client', __FILE__)
+require 'json'
+
+unless ARGV.size == 2
+  puts "Usage: #{$0} deployment_name server_name"
+  exit 1
+end
+$deployment_name = ARGV[0]
+$server_name     = ARGV[1]
+puts "deployment=#{$deployment_name} server=#{$server_name}"
+
+#
+# Open right_api_connection
+#
+
+# Read config file
+$system = File.readable?('.rsrc') ? JSON.restore(File.open('.rsrc','r')) : {}
+#puts ".rsrc: #{$system.inspect}"
+$system['host'] ||= 'my.rightscale.com'
+$system['email'] ||= 'someone@rightscale.com'
+
+# Init right_api_client
+loop do
+  if $system.key?('cookies') && $system.key?('host')
+    begin
+      $client = RightApi::Client.new(:cookies => $system['cookies'],
+                                     :api_url => "https://#{$system['host']}",
+                                     :account_id => '71')
+      break
+    rescue Exception => e
+      puts "Can't log in to #{$system['host']} account 71 using existing cookies", e.inspect
+      puts "*** Please log in:"
+    end
+  elsif $system.key?('email') && $system.key?('pw') && $system.key?('host')
+    begin
+      $client = RightApi::Client.new(:email => $system['email'], :password => $system['pw'],
+                                     :api_url => "https://#{$system['host']}",
+                                     :account_id => '71')
+      break
+    rescue Exception => e
+      puts "Can't log in to #{$system['host']} account 71 as #{$system['email']}:", e.inspect
+      puts "*** Please log in:"
+    end
+  end
+  $system.delete 'cookies'
+  printf "system [#{$system['host']}]: "
+  host = STDIN.readline
+  $system['host'] = host.chomp if host.size > 1
+  printf "email  [#{$system['email']}]: "
+  email = STDIN.readline
+  $system['email'] = email.chomp if email.size > 1
+  system "stty -echo"
+  printf "pw     [#{"*"*($system['pw']||"").size}]: "
+  pw = STDIN.readline
+  system "stty echo"
+  $system['pw'] = pw.chomp if pw.size > 1
+  puts "*"*($system['pw']||"").size
+end
+$system.delete('pw')
+$system['cookies'] = $client.cookies
+File.open(".rsrc", "w") do |f| JSON.dump($system, f) end
+
+#
+# Retrieve deployment
+#
+
+account_id = $client.instance_variable_get '@account_id'
+deployment = $client.deployments.index(:filter => ["name==#{$deployment_name}"])[0].show
+servers    = $client.servers.index(:filter => ["deployment_href==#{deployment.href}",
+                                               "name==#{$server_name}"])
+server     = servers.select{|s| s.name == $server_name}[0].show
+server_id  = server.href.split('/').last
+next_i     = server.next_instance.show
+
+puts "Cloning the server"
+new_id = nil
+begin
+  $client.do_put("/acct/#{account_id}/servers/#{server_id}/duplicate")
+rescue RightApi::Exceptions::ApiException => e
+  #puts "Exception: #{e.to_s}"
+  if e.to_s =~ /servers\/(\d+)".redirected/
+    new_id = $1
+  else
+    raise
+  end
+end
+
+server = $client.servers(:id => new_id).show
+
+case next_i.cloud.show.cloud_type
+
+when "sunrise", "google"
+  puts "Launching GCE server"
+  $server.launch
+
+
+when "rackspace"
+  puts "Launching RAX server"
+  $server.launch
+  puts "Waiting for server to be non-terminated"
+
+end
+
 
 

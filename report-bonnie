@@ -40,7 +40,7 @@ if v == '1.96'
   t[3] = Time.at(t[3].to_i).strftime("%Y/%m/%d %H:%M")
 end
 
-cols = %w{machine options concurrency time size files
+cols = %w{name options concurrency time size files
     seqwr-chr-kbs seqwr-chr-cpu seqwr-blk-kbs seqwr-blk-cpu rewr-blk-kbs rewr-blk-cpu
     seqrd-chr-kbs seqrd-chr-cpu seqrd-blk-kbs seqrd-blk-cpu rndseek-rate rndseek-cpu}
 
