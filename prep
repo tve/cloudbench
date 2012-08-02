@@ -32,6 +32,7 @@ rackspace)
     if ! mount | egrep xvda2; then
       yum install e4fsprogs.x86_64 -y
       /sbin/parted -s /dev/xvda mkpart primary 10200547328B 81604378622B
+      sleep 5 # the new dev may take a few secs to appear?
       /sbin/mkfs.ext4 -F -q /dev/xvda2
       mount /dev/xvda2 /mnt/ephemeral
 
