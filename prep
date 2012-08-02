@@ -5,6 +5,7 @@ cloud=`cat /etc/rightscale.d/cloud`
 gem install google_drive --no-rdoc --no-ri
 
 # format and mount disk
+ls -C /dev
 case $cloud in
 
 ec2)
@@ -17,7 +18,7 @@ ec2)
   fi
   ;;
 
-gce-not)
+gce)
   if [ -e /dev/vdb ]; then
     if ! mount | egrep '/dev/vdb'; then
       mkfs.ext4 -F -q /dev/vdb
@@ -26,11 +27,12 @@ gce-not)
   fi
   ;;
 
-rax-not)
+rax)
   if [ -e /dev/xvda ]; then
     if ! mount | egrep xvda2; then
+      yum install e4fsprogs.x86_64 -y
       /sbin/parted -s /dev/xvda mkpart primary 10200547328B 81604378622B
-      /sbin/mkfs.xfs /dev/xvda2
+      /sbin/mkfs.ext4 -F -q /dev/xvda2
       mount /dev/xvda2 /mnt/ephemeral
 
       wget http://www.coker.com.au/bonnie++/experimental/bonnie++-1.96.tgz
