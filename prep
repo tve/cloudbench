@@ -2,6 +2,20 @@
 cd /root
 cloud=`cat /etc/rightscale.d/cloud`
 
+case $cloud in
+softlayer)
+  if [ ! -d /root/ruby-1.9.3-p194 ]; then
+    yum erase ruby ruby-libs ruby-mode ruby-rdoc ruby-irb ruby-ri ruby-docs
+    yum install openssl-devel zlib-devel gcc gcc-c++ make autoconf readline-devel curl-devel expat-devel gettext-devel libyaml
+    wget http://ftp.ruby-lang.org/pub/ruby/1.9/ruby-1.9.3-p194.tar.gz
+    tar zxf ruby-1.9.3-p194.tar.gz
+    cd ruby-1.9.3-p194
+    ./configure --enable-shared --enable-pthread --prefix=/usr
+    make; make install
+  fi
+  ;;
+esac
+
 gem install google_drive --no-rdoc --no-ri
 
 # format and mount disk
@@ -53,7 +67,7 @@ azure)
   ;;
 
 softlayer)
-  if [ -d /dev/xvdc ]; then
+  if [ -e /dev/xvdc ]; then
     if ! mount | egrep xvdc; then
       yum install e4fsprogs.x86_64 -y
       /sbin/mkfs.ext4 -F -q /dev/xvdc
