@@ -34,6 +34,13 @@ google)
       mount /dev/vdb /mnt/ephemeral
     fi
   fi
+  if [ -e /dev/vdc ]; then
+    if ! mount | egrep '/dev/vdc'; then
+      mkfs.ext4 -F -q /dev/vdc
+      mkdir -p /mnt/ebs
+      mount /dev/vdc /mnt/ebs
+    fi
+  fi
   ;;
 
 azure)
