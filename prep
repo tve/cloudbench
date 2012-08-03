@@ -19,6 +19,15 @@ ec2)
   ;;
 
 google)
+  # If we're a donor instance (without attached disk), then kill rightlink
+  if [ ! -e /dev/vdc ]; then
+    puts `system ps -ax`
+    puts "*** Here we go... ***"
+    system('pkill -9 collectd; pkill -9 monit; pkill -9 ruby')
+    puts `system ps -ax`
+    exit 1
+  fi
+
   if [ -e /dev/vdb ]; then
     if ! mount | egrep '/dev/vdb'; then
       mkfs.ext4 -F -q /dev/vdb
@@ -33,6 +42,17 @@ azure)
     rmdir /mnt/resource
     mkdir -p /mnt/ephemeral
     mount /dev/sdb1 /mnt/ephemeral
+  fi
+  ;;
+
+softlayer)
+  if [ -d /dev/xvdc ]; then
+    if ! mount | egrep xvdc; then
+      yum install e4fsprogs.x86_64 -y
+      /sbin/mkfs.ext4 -F -q /dev/xvdc
+      mkdir -p /mnt/ephemeral
+      mount /dev/xvdc /mnt/ephemeral
+    fi
   fi
   ;;
 

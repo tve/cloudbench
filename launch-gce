@@ -4,8 +4,8 @@
 require File.expand_path('../../right_api_client/lib/right_api_client', __FILE__)
 require 'json'
 
-unless ARGV.size == 2
-  puts "Usage: #{$0} deployment_name server_name"
+unless ARGV.size >= 1
+  puts "Usage: #{$0} deployment_name [server_name]"
   exit 1
 end
 $deployment_name = ARGV[0]
@@ -13,7 +13,7 @@ $server_name     = ARGV[1]
 puts "deployment=#{$deployment_name} server=#{$server_name}"
 
 #
-# Open right_api_connection
+# Open right_api_connection and deal with authentication
 #
 
 # Read config file
@@ -74,6 +74,12 @@ unless deployment && deployment.size > 0
   exit 1
 end
 deployment = deployment[0].show
+
+if $server_name.nil?
+  put "Cookie has been refreshed, exiting..."
+  exit 0
+end
+
 servers    = $client.servers.index(:filter => ["deployment_href==#{deployment.href}",
                                                "name==#{$server_name}"])
 server     = (servers||[]).select{|s| s.name == $server_name}
@@ -108,44 +114,116 @@ def launch(server)
   #puts server.show(:foo=>'foo').inspect
   server.launch
   sleep 1
-  while server.show(:foo=>'foo').state == 'inactive'
+  while (server=server.show(:foo=>'foo')).state == 'inactive'
     puts "    Waiting for server #{server.name} to get going..."
     sleep 10
   end
   puts "    Server is launching => #{server.name} #{server.href}"
 end
 
+def wait_done(instance)
+  puts "Waiting for instance #{instance.name} to be done"
+  loop do
+    instance=instance.show(:foo=>'foo')
+    tags = $client.tags.by_resource(:resource_hrefs => [instance.href])
+    if !tags.nil? && tags.size >= 0
+      tags = tags.first.tags
+      break if tags.index{|t|t.values.index{|v| v.start_with?("mcbench:done=")}}
+    end
+    puts "    Still waiting for instance #{instance.name} to be done..."
+    sleep 120
+  end
+end
+
 def finish(server)
+  puts "Terminating server #{server.name}"
+  server.terminate
   while server.show(:foo=>'foo').state != 'inactive'
     puts "    Waiting for server #{server.name} to terminate..."
-    sleep 300
+    sleep 60
   end
-  puts "Deleting RAX server"
+  puts "Deleting server #{server.name}"
   server.destroy
 end
+
+#
+# Take-over a GCE instance
+#
+
+def gce_takeover(i_name, sz)
+  puts "Taking over instance #{i_name} adding #{sz}GB disk"
+  exit 1 unless i_name =~ /^i-/ && sz.to_i > 0
+
+  i_info = `gcutil getinstance #{i_name} --print_json`
+  unless i_info =~ /^\{/
+    puts "Error: #{i_info}"
+    exit 1
+  end
+  i_info = JSON.parse(i_info)
+  unless i_info['metadata']
+    puts "Error: no metadata found in #{i_info}"
+    exit 1
+  end
+
+  cmd = "gcutil adddisk #{i_name}-disk --size_gb=#{sz} --zone=#{i_info['zone']} " +
+        "--wait_until_complete"
+  puts cmd
+  system(cmd) || exit(1)
+
+  new_name = i_name.sub(/ v/, 'disk-v')
+  cmd = "gcutil addinstance #{new_name}-disk --image=#{i_info['image']} " +
+        "--machine_type=#{i_info['machineType']} --zone=#{i_info['zone']} " +
+        "--disk=#{i_name}-disk " +
+        "--tags=#{i_info['tags'].join(',')} " +
+        i_info['metadata']['items'].map{|m|
+          "--metadata=#{m['key']}:#{m['value']}"
+        }.join(' ')
+  puts cmd
+  n_info = `#{cmd}`
+  unless n_info =~ /^\{/
+    puts "Error: #{n_info}"
+    exit 1
+  end
+  puts JSON.parse(n_info)
+ exit 1
+end
+
+#
+# Alright, do it!
+#
 
 case next_i.cloud.show.cloud_type
 
 when "sunrise", "google"
   launch(server)
+  server = server.show(:foo=>'foo')
+  puts server.current_instance.show.inspect
+  inst2 = gce_takeover(server.current_instance.show.resource_uid.split('/').last, 200)
+  wait_done(inst2)
   finish(server)
-  puts "Done!"
+  finish(server2)
 
 when "rackspace"
   launch(server)
+  wait_done(server.current_instance)
   finish(server)
-  puts "Done!"
 
 when "azure"
   launch(server)
+  wait_done(server.current_instance)
   finish(server)
-  puts "Done!"
+
+when "softlayer"
+  launch(server)
+  wait_done(server.current_instance)
+  finish(server)
 
 else
   puts "Dunno what to do with cloud #{next_i.cloud.show.cloud_type}"
   exit 1
 
 end
+puts "Done! #{Time.now}"
 
 
 
