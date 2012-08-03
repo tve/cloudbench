@@ -73,6 +73,12 @@ softlayer)
       /sbin/mkfs.ext4 -F -q /dev/xvdc
       mkdir -p /mnt/ephemeral
       mount /dev/xvdc /mnt/ephemeral
+
+      wget http://www.coker.com.au/bonnie++/experimental/bonnie++-1.96.tgz
+      tar zxf bonnie++-1.96.tgz
+      cd bonnie++-1.96
+      ./configure --prefix=/usr
+      make install
     fi
   fi
   ;;

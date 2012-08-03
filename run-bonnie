@@ -18,7 +18,7 @@ for i in 1 2 3; do
   if [ -d /mnt/ebs ]; then
     mkdir -p /mnt/ebs/bonnie
     /usr/sbin/bonnie++ -d /mnt/ebs/bonnie -u 0:0 -n 0 -f -c 8 $sz |
-      ./cloudbench/report-bonnie $CLOUD-$MACHINE local
+      ./cloudbench/report-bonnie $CLOUD-$MACHINE ebs
   fi
 
 done
