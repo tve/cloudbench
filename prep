@@ -21,10 +21,10 @@ ec2)
 google)
   # If we're a donor instance (without attached disk), then kill rightlink
   if [ ! -e /dev/vdc ]; then
-    puts `system ps -ax`
-    puts "*** Here we go... ***"
-    system('pkill -9 collectd; pkill -9 monit; pkill -9 ruby')
-    puts `system ps -ax`
+    ps -ax
+    echo "*** Here we go... ***"
+    pkill -9 collectd; pkill -9 monit; pkill -9 ruby
+    ps -ax
     exit 1
   fi
 

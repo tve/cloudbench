@@ -150,7 +150,7 @@ end
 # Take-over a GCE instance
 #
 
-def gce_takeover(i_name, sz)
+def gce_takeover(i_name, sz, cloud)
   puts "Taking over instance #{i_name} adding #{sz}GB disk"
   exit 1 unless i_name =~ /^i-/ && sz.to_i > 0
 
@@ -170,8 +170,7 @@ def gce_takeover(i_name, sz)
   puts cmd
   system(cmd) || exit(1)
 
-  new_name = i_name.sub(/ v/, 'disk-v')
-  cmd = "gcutil addinstance #{new_name}-disk --image=#{i_info['image']} " +
+  cmd = "gcutil addinstance #{i_name}-disk --image=#{i_info['image']} " +
         "--machine_type=#{i_info['machineType']} --zone=#{i_info['zone']} " +
         "--disk=#{i_name}-disk " +
         "--tags=#{i_info['tags'].join(',')} " +
@@ -179,13 +178,14 @@ def gce_takeover(i_name, sz)
           "--metadata=#{m['key']}:#{m['value']}"
         }.join(' ')
   puts cmd
-  n_info = `#{cmd}`
-  unless n_info =~ /^\{/
-    puts "Error: #{n_info}"
-    exit 1
+  system(cmd) || exit(1)
+
+  loop do
+    i = cloud.instances.index(:filter => ["name==#{i_name}-disk"])
+    return i.first.show if !i.nil? && i.size > 0
+    puts "    Wait 'til instance #{i_name}-disk is discovered"
+    sleep 60
   end
-  puts JSON.parse(n_info)
- exit 1
 end
 
 #
@@ -197,8 +197,10 @@ case next_i.cloud.show.cloud_type
 when "sunrise", "google"
   launch(server)
   server = server.show(:foo=>'foo')
-  puts server.current_instance.show.inspect
-  inst2 = gce_takeover(server.current_instance.show.resource_uid.split('/').last, 200)
+  c_inst = server.current_instance.show
+  puts c_inst.inspect
+  inst2 = gce_takeover(c_inst.resource_uid.split('/').last, 200, c_inst.cloud.show)
+  puts inst2.inspect
   wait_done(inst2)
   finish(server)
   finish(server2)
