@@ -16,11 +16,12 @@ if ruby -v | egrep -q '1\.8\.'; then
   if [ ! -d /root/ruby-1.9.3-p194 ]; then
     yum erase ruby ruby-libs ruby-mode ruby-rdoc ruby-irb ruby-ri ruby-docs -y
     yum install openssl-devel zlib-devel gcc gcc-c++ make autoconf readline-devel curl-devel expat-devel gettext-devel libyaml -y
-    wget http://ftp.ruby-lang.org/pub/ruby/1.9/ruby-1.9.3-p194.tar.gz
+    wget -q http://ftp.ruby-lang.org/pub/ruby/1.9/ruby-1.9.3-p194.tar.gz
     tar zxf ruby-1.9.3-p194.tar.gz
     cd ruby-1.9.3-p194
     ./configure --enable-shared --enable-pthread --prefix=/usr
-    make; make install
+    make &>/dev/null
+    make install
   fi
 fi
 
