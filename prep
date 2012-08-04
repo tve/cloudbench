@@ -72,12 +72,12 @@ google)
   ;;
 
 azure)
-  if [ -d /mnt/resource ]; then
-    umount /mnt/resource
-    rmdir /mnt/resource
-    mkdir -p /mnt/ephemeral
-    mount /dev/sdb1 /mnt/ephemeral
-  fi
+  #if [ -d /mnt/resource ]; then
+  #  umount /mnt/resource
+  #  rmdir /mnt/resource
+  #  mkdir -p /mnt/ephemeral
+  #  mount /dev/sdb1 /mnt/ephemeral
+  #fi
   if [ -e /dev/sdc ]; then
     if ! mount | egrep '/dev/sdc'; then
       mkfs.ext4 -F -q /dev/sdc
