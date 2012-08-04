@@ -22,6 +22,7 @@ if ruby -v | egrep -q '1\.8\.'; then
     ./configure --enable-shared --enable-pthread --prefix=/usr &> /dev/null
     make &>/dev/null
     make install
+    ruby -v
   fi
 fi
 
@@ -38,6 +39,8 @@ ec2)
       mkfs.ext4 -F -q /dev/xvdq
       mount /dev/xvdq /mnt/ebs
     fi
+  fi
+  if [ -e /dev/xvdr ]; then
     if ! mount | egrep '/dev/xvdr'; then
       mkdir -p /mnt/ebs2
       mkfs.ext4 -F -q /dev/xvdr
