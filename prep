@@ -115,6 +115,7 @@ softlayer)
   ;;
 
 cloudstack)
+  rm -f /mnt/ephemeral
   if [ -e /dev/vdb ]; then
     if ! mount | egrep vdb; then
       yum install e4fsprogs.x86_64 -y &> /dev/null

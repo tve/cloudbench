@@ -225,6 +225,11 @@ when "softlayer", "soft_layer"
   wait_done(server)
   finish(server)
 
+when "cloudstack", "cloud_stack"
+  launch(server)
+  wait_done(server)
+  finish(server)
+
 else
   puts "Dunno what to do with cloud #{next_i.cloud.show.cloud_type}"
   exit 1
