@@ -65,7 +65,14 @@ google)
       mount /dev/vdb /mnt/ephemeral
     fi
   fi
-  if [ -e /dev/vdc ]; then
+  # 8-core box has 2 local disks (vdb and vdc) so net disk becomes vdd and we ignore vdc
+  if [ -e /dev/vdd ]; then
+    if ! mount | egrep '/dev/vdd'; then
+      mkfs.ext4 -F -q /dev/vdd
+      mkdir -p /mnt/ebs
+      mount /dev/vdd /mnt/ebs
+    fi
+  elif [ -e /dev/vdc ]; then
     if ! mount | egrep '/dev/vdc'; then
       mkfs.ext4 -F -q /dev/vdc
       mkdir -p /mnt/ebs
