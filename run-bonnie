@@ -9,12 +9,6 @@ fi
 
 for i in 1 2 3; do
 
-  if [ -d /mnt/ephemeral ]; then
-    mkdir -p /mnt/ephemeral/bonnie
-    /usr/sbin/bonnie++ -d /mnt/ephemeral/bonnie -u 0:0 -n 0 -f -c 8 $sz |
-      ./cloudbench/report-bonnie $CLOUD-$MACHINE local
-  fi
-  
   if [ -d /mnt/ebs ]; then
     mkdir -p /mnt/ebs/bonnie
     /usr/sbin/bonnie++ -d /mnt/ebs/bonnie -u 0:0 -n 0 -f -c 8 $sz |
@@ -27,6 +21,12 @@ for i in 1 2 3; do
       ./cloudbench/report-bonnie $CLOUD-$MACHINE ebs2
   fi
 
+  if [ -d /mnt/ephemeral ]; then
+    mkdir -p /mnt/ephemeral/bonnie
+    /usr/sbin/bonnie++ -d /mnt/ephemeral/bonnie -u 0:0 -n 0 -f -c 8 $sz |
+      ./cloudbench/report-bonnie $CLOUD-$MACHINE local
+  fi
+  
 done
 
 

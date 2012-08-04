@@ -10,8 +10,9 @@
 cd /root
 cloud=`cat /etc/rightscale.d/cloud`
 
-case $cloud in
-softlayer)
+ruby -v
+if ruby -v | egrep -q '1\.8\.'; then
+  echo "Installing ruby 1.9"
   if [ ! -d /root/ruby-1.9.3-p194 ]; then
     yum erase ruby ruby-libs ruby-mode ruby-rdoc ruby-irb ruby-ri ruby-docs
     yum install openssl-devel zlib-devel gcc gcc-c++ make autoconf readline-devel curl-devel expat-devel gettext-devel libyaml
@@ -21,8 +22,7 @@ softlayer)
     ./configure --enable-shared --enable-pthread --prefix=/usr
     make; make install
   fi
-  ;;
-esac
+fi
 
 gem install google_drive --no-rdoc --no-ri
 
@@ -102,6 +102,24 @@ softlayer)
     fi
   fi
   ;;
+
+cloudstack)
+  if [ -e /dev/vdb ]; then
+    if ! mount | egrep vdb; then
+      yum install e4fsprogs.x86_64 -y
+      /sbin/mkfs.ext4 -F -q /dev/vdb
+      mkdir -p /mnt/ebs
+      mount /dev/vdb /mnt/ebs
+
+      wget http://www.coker.com.au/bonnie++/experimental/bonnie++-1.96.tgz
+      tar zxf bonnie++-1.96.tgz
+      cd bonnie++-1.96
+      ./configure --prefix=/usr
+      make install
+    fi
+  fi
+  ;;
+
 
 rackspace)
   if [ -e /dev/xvda ]; then
