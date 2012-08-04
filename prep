@@ -88,6 +88,7 @@ azure)
   #  mkdir -p /mnt/ephemeral
   #  mount /dev/sdb1 /mnt/ephemeral
   #fi
+  rm -rf /mnt/ephemeral
   if [ -e /dev/sdc ]; then
     if ! mount | egrep '/dev/sdc'; then
       mkfs.ext4 -F -q /dev/sdc
@@ -115,7 +116,7 @@ softlayer)
   ;;
 
 cloudstack)
-  rm -f /mnt/ephemeral
+  rm -rf /mnt/ephemeral
   if [ -e /dev/vdb ]; then
     if ! mount | egrep vdb; then
       yum install e4fsprogs.x86_64 -y &> /dev/null
