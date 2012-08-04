@@ -1,4 +1,12 @@
 #! /bin/bash -ex
+#
+# This script prepares a server for the multi-cloud benchmarks
+# In general, we need ruby 1.9
+# For the disk benchmarks, it formats and mounts an ephemeral drives on /mnt/ephemeral and
+# any network-attached disks on /mnt/ebs. If there is more than one network attached disk, the
+# second one goes on /mnt/ebs2 (this is used to test non-ProvIOPS and ProvIOPS EBS volumes in EC2).
+# The script also ensures bonnie++ v1.96 is installed.
+
 cd /root
 cloud=`cat /etc/rightscale.d/cloud`
 
@@ -68,6 +76,13 @@ azure)
     rmdir /mnt/resource
     mkdir -p /mnt/ephemeral
     mount /dev/sdb1 /mnt/ephemeral
+  fi
+  if [ -e /dev/sdc ]; then
+    if ! mount | egrep '/dev/sdc'; then
+      mkfs.ext4 -F -q /dev/sdc
+      mkdir -p /mnt/ebs
+      mount /dev/sdc /mnt/ebs
+    fi
   fi
   ;;
 
