@@ -19,7 +19,7 @@ if ruby -v | egrep -q '1\.8\.'; then
     wget -q http://ftp.ruby-lang.org/pub/ruby/1.9/ruby-1.9.3-p194.tar.gz
     tar zxf ruby-1.9.3-p194.tar.gz
     cd ruby-1.9.3-p194
-    ./configure --enable-shared --enable-pthread --prefix=/usr
+    ./configure --enable-shared --enable-pthread --prefix=/usr &> /dev/null
     make &>/dev/null
     make install
   fi
