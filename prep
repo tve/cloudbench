@@ -29,6 +29,11 @@ ec2)
       mkfs.ext4 -F -q /dev/xvdq
       mount /dev/xvdq /mnt/ebs
     fi
+    if ! mount | egrep '/dev/xvdq'; then
+      mkdir -p /mnt/ebs2
+      mkfs.ext4 -F -q /dev/xvdr
+      mount /dev/xvdq /mnt/ebs2
+    fi
   fi
   ;;
 
