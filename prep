@@ -14,14 +14,14 @@ ruby -v
 if ruby -v | egrep -q '1\.8\.'; then
   echo "Installing ruby 1.9"
   if [ ! -d /root/ruby-1.9.3-p194 ]; then
-    yum erase ruby ruby-libs ruby-mode ruby-rdoc ruby-irb ruby-ri ruby-docs -y
-    yum install openssl-devel zlib-devel gcc gcc-c++ make autoconf readline-devel curl-devel expat-devel gettext-devel libyaml -y
+    yum erase ruby ruby-libs ruby-mode ruby-rdoc ruby-irb ruby-ri ruby-docs -y &> /dev/null
+    yum install openssl-devel zlib-devel gcc gcc-c++ make autoconf readline-devel curl-devel expat-devel gettext-devel libyaml -y &> /dev/null
     wget -q http://ftp.ruby-lang.org/pub/ruby/1.9/ruby-1.9.3-p194.tar.gz
     tar zxf ruby-1.9.3-p194.tar.gz
     cd ruby-1.9.3-p194
     ./configure --enable-shared --enable-pthread --prefix=/usr &> /dev/null
     make &>/dev/null
-    make install
+    make install &> /dev/null
     ruby -v
   fi
 fi
@@ -100,16 +100,16 @@ azure)
 softlayer)
   if [ -e /dev/xvdc ]; then
     if ! mount | egrep xvdc; then
-      yum install e4fsprogs.x86_64 -y
+      yum install e4fsprogs.x86_64 -y &> /dev/null
       /sbin/mkfs.ext4 -F -q /dev/xvdc
       mkdir -p /mnt/ephemeral
       mount /dev/xvdc /mnt/ephemeral
 
-      wget http://www.coker.com.au/bonnie++/experimental/bonnie++-1.96.tgz
+      wget -q http://www.coker.com.au/bonnie++/experimental/bonnie++-1.96.tgz
       tar zxf bonnie++-1.96.tgz
       cd bonnie++-1.96
-      ./configure --prefix=/usr
-      make install
+      ./configure --prefix=/usr &>/dev/null
+      make install &>/dev/null
     fi
   fi
   ;;
@@ -117,16 +117,16 @@ softlayer)
 cloudstack)
   if [ -e /dev/vdb ]; then
     if ! mount | egrep vdb; then
-      yum install e4fsprogs.x86_64 -y
+      yum install e4fsprogs.x86_64 -y &> /dev/null
       /sbin/mkfs.ext4 -F -q /dev/vdb
       mkdir -p /mnt/ebs
       mount /dev/vdb /mnt/ebs
 
-      wget http://www.coker.com.au/bonnie++/experimental/bonnie++-1.96.tgz
+      wget -q http://www.coker.com.au/bonnie++/experimental/bonnie++-1.96.tgz
       tar zxf bonnie++-1.96.tgz
       cd bonnie++-1.96
-      ./configure --prefix=/usr
-      make install
+      ./configure --prefix=/usr &>/dev/null
+      make install &>/dev/null
     fi
   fi
   ;;
@@ -141,11 +141,11 @@ rackspace)
       /sbin/mkfs.ext4 -F -q /dev/xvda2
       mount /dev/xvda2 /mnt/ephemeral
 
-      wget http://www.coker.com.au/bonnie++/experimental/bonnie++-1.96.tgz
+      wget -q http://www.coker.com.au/bonnie++/experimental/bonnie++-1.96.tgz
       tar zxf bonnie++-1.96.tgz
       cd bonnie++-1.96
-      ./configure --prefix=/usr
-      make install
+      ./configure --prefix=/usr &>/dev/null
+      make install &>/dev/null
     fi
   fi
 
