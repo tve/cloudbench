@@ -16,21 +16,21 @@ for i in 1 2 3; do
   if [ -d /mnt/ebs ]; then
     mkdir -p /mnt/ebs/bonnie
     df -h /mnt/ebs/bonnie/.
-    /usr/sbin/bonnie++ -d /mnt/ebs/bonnie -u 0:0 -n 0 -f -c 8 $sz |
+    /usr/sbin/bonnie++ -d /mnt/ebs/bonnie -u 0:0 -n 0 -f -c 8 -D $sz |
       ./cloudbench/report-bonnie $CLOUD-$MACHINE ebs
   fi
 
   if [ -d /mnt/ebs2 ]; then
     mkdir -p /mnt/ebs2/bonnie
     df -h /mnt/ebs2/bonnie/.
-    /usr/sbin/bonnie++ -d /mnt/ebs2/bonnie -u 0:0 -n 0 -f -c 8 $sz |
+    /usr/sbin/bonnie++ -d /mnt/ebs2/bonnie -u 0:0 -n 0 -f -c 8 -D $sz |
       ./cloudbench/report-bonnie $CLOUD-$MACHINE ebs2
   fi
 
   if [ -d /mnt/ephemeral ]; then
     mkdir -p /mnt/ephemeral/bonnie
     df -h /mnt/ephemeral/bonnie/.
-    /usr/sbin/bonnie++ -d /mnt/ephemeral/bonnie -u 0:0 -n 0 -f -c 8 $sz |
+    /usr/sbin/bonnie++ -d /mnt/ephemeral/bonnie -u 0:0 -n 0 -f -c 8 -D $sz |
       ./cloudbench/report-bonnie $CLOUD-$MACHINE local
   fi
   
