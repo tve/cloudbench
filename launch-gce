@@ -27,8 +27,8 @@ loop do
                                      :account_id => '71')
       break
     rescue Exception => e
-      puts "Can't log in to #{$system['host']} account 71 using existing cookies", e.inspect
-      puts "*** Please log in:"
+      $stderr.puts "Can't log in to #{$system['host']} account 71 using existing cookies", e.inspect
+      $stderr.puts "*** Please log in:"
     end
   elsif $system.key?('email') && $system.key?('pw') && $system.key?('host')
     begin
@@ -37,23 +37,23 @@ loop do
                                      :account_id => '71')
       break
     rescue Exception => e
-      puts "Can't log in to #{$system['host']} account 71 as #{$system['email']}:", e.inspect
-      puts "*** Please log in:"
+      $stderr.puts "Can't log in to #{$system['host']} account 71 as #{$system['email']}:", e.inspect
+      $stderr.puts "*** Please log in:"
     end
   end
   $system.delete 'cookies'
-  printf "system [#{$system['host']}]: "
+  $stderr.printf "system [#{$system['host']}]: "
   host = STDIN.readline
   $system['host'] = host.chomp if host.size > 1
-  printf "email  [#{$system['email']}]: "
+  $stderr.printf "email  [#{$system['email']}]: "
   email = STDIN.readline
   $system['email'] = email.chomp if email.size > 1
   system "stty -echo"
-  printf "pw     [#{"*"*($system['pw']||"").size}]: "
+  $stderr.printf "pw     [#{"*"*($system['pw']||"").size}]: "
   pw = STDIN.readline
   system "stty echo"
   $system['pw'] = pw.chomp if pw.size > 1
-  puts "*"*($system['pw']||"").size
+  $stderr.puts "*"*($system['pw']||"").size
 end
 $system.delete('pw')
 $system['cookies'] = $client.cookies

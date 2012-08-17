@@ -1,0 +1,6 @@
+#! /bin/bash
+d="TvE mcbench"
+for s in `./launch-gce "$d"`; do
+  echo ===== $d $s
+  ./launch-gce "$d" "$s" &>>"$s.log" &
+done

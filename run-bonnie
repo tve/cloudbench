@@ -11,6 +11,8 @@ if [ $gb_mem -lt 20 ]; then
   sz="-s 40g"
 fi
 
+sz="-r 0 -s 8g"
+
 for i in 1 2 3; do
 
   if [ -d /mnt/ebs ]; then
