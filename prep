@@ -10,6 +10,19 @@
 cd /root
 cloud=`cat /etc/rightscale.d/cloud`
 
+# If we're a donor instance (without attached disk), then kill rightlink
+case $cloud in
+google)
+  if [ ! -e /dev/vdc ]; then
+    ps -ax
+    echo "*** Here we go... ***"
+    pkill -9 collectd; pkill -9 monit; pkill -9 ruby
+    ps -ax
+    exit 1
+  fi
+esac
+
+# ensure we have ruby 1.9
 ruby -v
 if ruby -v | egrep -q '1\.8\.'; then
   echo "Installing ruby 1.9"
@@ -26,7 +39,18 @@ if ruby -v | egrep -q '1\.8\.'; then
   fi
 fi
 
+# instal google drive gem
 gem install google_drive --no-rdoc --no-ri
+
+# install fio
+yum install libaio-devel -y
+cd /root
+if [ ! -f /usr/bin/fio ]; then
+  curl http://brick.kernel.dk/snaps/fio-2.0.8.tar.gz | tar zxf -
+  cd fio-2*
+  perl -p -i -e '/^prefix/ && {s/.local//}' Makefile
+  make install
+fi
 
 # format and mount disk
 ls -C /dev
@@ -50,15 +74,6 @@ ec2)
   ;;
 
 google)
-  # If we're a donor instance (without attached disk), then kill rightlink
-  if [ ! -e /dev/vdc ]; then
-    ps -ax
-    echo "*** Here we go... ***"
-    pkill -9 collectd; pkill -9 monit; pkill -9 ruby
-    ps -ax
-    exit 1
-  fi
-
   if [ -e /dev/vdb ]; then
     if ! mount | egrep '/dev/vdb'; then
       mkfs.ext4 -F -q /dev/vdb
