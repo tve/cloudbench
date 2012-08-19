@@ -21,7 +21,7 @@ for d in ebs ebs2 ephemeral; do
     mkdir -p /mnt/$d/fio
     cd /mnt/$d/fio/
     df -h .
-    fio --name=prep --rw=write --size=$sz --filename=fio --bs=1M --ioengine=libaio --iodepth=16 --end-fsync
+    fio --name=prep --rw=write --size=$sz --filename=fio --bs=1M --ioengine=libaio --iodepth=16 --end_fsync=1
   fi
 done
 
