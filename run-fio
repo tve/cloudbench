@@ -16,6 +16,8 @@ sz=1G
 
 ini=/root/cloudbench/fio.ini
 
+echo '===== creating files ====='
+
 # create all the files
 for d in ebs ebs2 ephemeral; do
   if [ -d /mnt/$d ]; then
@@ -28,6 +30,7 @@ done
 
 # run the benchmarks a few times
 for i in 1 2 3; do
+  echo "===== benchmark run $i == $i $i $i $i $i $i $i $i $i $i $i $i $i $i $i $i $i ====="
   for d in ebs ebs2 ephemeral; do
     cd /mnt/$d/fio
     fio $ini | /root/cloudbench/report-fio $CLOUD-$MACHINE $d $sz
