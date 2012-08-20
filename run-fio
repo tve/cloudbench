@@ -16,7 +16,7 @@ fi
 
 ini=/root/cloudbench/fio.ini
 
-echo '===== creating files ====='
+echo '===== creating files ============================================='
 
 # create all the files
 for d in ebs ebs2 ephemeral; do
