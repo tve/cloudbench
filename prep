@@ -82,7 +82,7 @@ google)
       mount /dev/vdd /mnt/ebs
     fi
     if ! mount | egrep '/dev/md0'; then
-      mdadm --create --verbose /dev/md0 --level=0 /dev/vdb /dev/vdc
+      mdadm --create --verbose /dev/md0 --level=0 --raid-devices=2 /dev/vdb /dev/vdc
       mkfs.ext4 -F -q /dev/md0
       mount /dev/md0 /mnt/ephemeral
     fi
