@@ -1,6 +1,6 @@
 #! /usr/bin/env ruby
 require File.dirname(__FILE__) + '/gs.rb'
-gs_init('fio')
+#gs_init('fio')
 
 info=ARGV
 #puts info.join(' ')
@@ -18,18 +18,22 @@ while line = STDIN.gets
   if line =~ /^(\w+): .group.*err=\s*(\d+)/
     gr = $1
     err += $2.to_i
-  elsif gr && line =~ /^  (read |write):.*io=(\d+\w+), bw=(\d+)KB.*iops=(\d+)/
-    if gr.start_with('seq')
+  elsif gr && gr.start_with?('seq')
+    if line =~ /^  (read |write):.*io=([\d\w.]+), bw=(\d+)KB/
       t['size'] = $2
       t[gr] = $3
-    else
-      t[gr] = $4
+      gr = nil
     end
-    gr = nil
+  elsif gr && gr.start_with?('rnd')
+    if line =~ /^  (read |write):.*iops=(\d+) /
+      t[gr] = $2
+      gr = nil
+    end
   end
 end
 t['err'] = err
-append_row($gs, $sheet, t)
+puts t.inspect
+#append_row($gs, $sheet, t)
 
 =begin
 seqrd: (groupid=0, jobs=1): err= 0: pid=16386
