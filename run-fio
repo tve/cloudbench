@@ -32,7 +32,9 @@ done
 for i in 1 2 3; do
   echo "===== benchmark run $i == $i $i $i $i $i $i $i $i $i $i $i $i $i $i $i $i $i ====="
   for d in ebs ebs2 ephemeral; do
-    cd /mnt/$d/fio
-    fio $ini | /root/cloudbench/report-fio $CLOUD-$MACHINE $d $sz
+    if [ -d /mnt/$d ]; then
+      cd /mnt/$d/fio
+      fio $ini | /root/cloudbench/report-fio $CLOUD-$MACHINE $d $sz
+    fi
   done
 done

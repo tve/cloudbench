@@ -1,6 +1,6 @@
 #! /usr/bin/env ruby
 require File.dirname(__FILE__) + '/gs.rb'
-#gs_init('fio')
+gs_init('fio')
 
 info=ARGV
 #puts info.join(' ')
@@ -33,7 +33,7 @@ while line = STDIN.gets
 end
 t['err'] = err
 puts t.inspect
-#append_row($gs, $sheet, t)
+append_row($gs, $sheet, t)
 
 =begin
 seqrd: (groupid=0, jobs=1): err= 0: pid=16386
@@ -75,7 +75,7 @@ seqwr: (groupid=1, jobs=1): err= 0: pid=16387
      submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
      complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.1%, 32=0.0%, 64=0.0%, >=64=0.0%
      issued    : total=r=0/w=65536/d=0, short=r=0/w=0/d=0
-fio: (groupid=2, jobs=1): err= 0: pid=16388
+rndrw: (groupid=2, jobs=1): err= 0: pid=16388
   read : io=139568KB, bw=492369 B/s, iops=120 , runt=290265msec
     slat (usec): min=32 , max=63679 , avg=118.30, stdev=1542.85
     clat (msec): min=1 , max=164 , avg=72.95, stdev=10.46
