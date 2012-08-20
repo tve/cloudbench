@@ -13,9 +13,9 @@ cloud=`cat /etc/rightscale.d/cloud`
 # If we're a donor instance (without attached disk), then kill rightlink
 case $cloud in
 google)
-  if [ ! -e /dev/vdc ]; then
+  if ! egrep -q PERSISTENT /var/spool/cloud/meta-data.sh; then
     ps -ax
-    echo "*** Here we go... ***"
+    echo "*** HARAKIRI *** Here we go... ***"
     pkill -9 collectd; pkill -9 monit; pkill -9 ruby
     ps -ax
     exit 1
@@ -74,12 +74,6 @@ ec2)
   ;;
 
 google)
-  if [ -e /dev/vdb ]; then
-    if ! mount | egrep '/dev/vdb'; then
-      mkfs.ext4 -F -q /dev/vdb
-      mount /dev/vdb /mnt/ephemeral
-    fi
-  fi
   # 8-core box has 2 local disks (vdb and vdc) so net disk becomes vdd and we ignore vdc
   if [ -e /dev/vdd ]; then
     if ! mount | egrep '/dev/vdd'; then
@@ -87,11 +81,20 @@ google)
       mkdir -p /mnt/ebs
       mount /dev/vdd /mnt/ebs
     fi
+    if ! mount | egrep '/dev/md0'; then
+      mdadm --create --verbose /dev/md0 --level=0 /dev/vdb /dev/vdc
+      mkfs.ext4 -F -q /dev/md0
+      mount /dev/md0 /mnt/ephemeral
+    fi
   elif [ -e /dev/vdc ]; then
     if ! mount | egrep '/dev/vdc'; then
       mkfs.ext4 -F -q /dev/vdc
       mkdir -p /mnt/ebs
       mount /dev/vdc /mnt/ebs
+    fi
+    if ! mount | egrep '/dev/vdb'; then
+      mkfs.ext4 -F -q /dev/vdb
+      mount /dev/vdb /mnt/ephemeral
     fi
   fi
   ;;
