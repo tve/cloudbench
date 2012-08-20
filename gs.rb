@@ -2,8 +2,9 @@
 require 'rubygems'
 require 'google_drive'
 
+GS='0Aq-daXyC3OSSdFhqY1lORFdHSkdZMjJraTBKa0thQUE'
+
 def gs_init(name)
-  GS='0Aq-daXyC3OSSdFhqY1lORFdHSkdZMjJraTBKa0thQUE'
   #$gs = GoogleDrive.saved_session
   $gs = GoogleDrive::Session.new({:wise => open('.ssh_tok').gets.chomp}, nil)
   $ss = $gs.spreadsheet_by_key(GS)
