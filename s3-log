@@ -1,0 +1,16 @@
+#! /usr/bin/env ruby
+require 'rubygems'
+require 'right_aws'
+s3_id  = ENV['AWS_ACCESS_KEY_ID']
+s3_key = ENV['AWS_SECRET_ACCESS_KEY']
+
+unless ARGV.size == 3
+  STDERR.puts "Usage: s3-log label timestamp file"
+  exit 1
+end
+label = ARGV[0]
+timestamp = ARGV[1].gsub(/\//, '-')
+text = IO.read(ARGV[2])
+
+b = RightAws::S3.new(s3_id, s3_key).bucket('tve-mcbench')
+b.put("#{label}/#{timestamp}", text, {}, nil, 'Content-Type' => 'text/plain')

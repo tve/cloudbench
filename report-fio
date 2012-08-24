@@ -1,7 +1,5 @@
 #! /usr/bin/env ruby
-require File.dirname(__FILE__) + '/gs.rb'
-gs_init('fio')
-
+dir=File.dirname(__FILE__)
 info=ARGV
 #puts info.join(' ')
 
@@ -10,11 +8,11 @@ gr=nil
 t = {
   'name' => info[0], 'options' => info[1],
   'label' => info[0] + '-' + info[1],
-  'time' => Time.now.strftime("%Y/%m/%d %H:%M")
+  'time' => info[2]
 }
 
 while line = STDIN.gets
-  puts line.chomp
+  #puts line.chomp
   if line =~ /^(\w+): .group.*err=\s*(\d+)/
     gr = $1
     err += $2.to_i
@@ -33,7 +31,7 @@ while line = STDIN.gets
 end
 t['err'] = err
 puts t.inspect
-append_row($gs, $sheet, t)
+system("#{dir}/gs-append fio #{t.map{|k,v| "'#{k}=#{v}'"}.join(' ')}")
 
 =begin
 seqrd: (groupid=0, jobs=1): err= 0: pid=16386

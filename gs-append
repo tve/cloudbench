@@ -1,0 +1,53 @@
+#! /usr/bin/env ruby
+require 'rubygems'
+require 'google_drive'
+
+GS='0Aq-daXyC3OSSdFhqY1lORFdHSkdZMjJraTBKa0thQUE'
+
+def gs_init(name)
+  #$gs = GoogleDrive.saved_session
+  ssh_tok = File.exist?('./.ssh_tok') ? './.ssh_tok' : '/root/.ssh_tok'
+  $gs = GoogleDrive::Session.new({:wise => open(ssh_tok).gets.chomp}, nil)
+  $ss = $gs.spreadsheet_by_key(GS)
+  ws = name + ' ' + Time.now.strftime("%Y-%m")
+  puts "Spreadsheet: #{$ss.title} / #{ws}"
+  $sheet = $ss.worksheet_by_title(ws)
+  $sheet ||= $ss.add_worksheet(ws)
+end
+
+def append_row(row_hash={})
+  xml = '<entry xmlns="http://www.w3.org/2005/Atom" xmlns:gsx="http://schemas.google.com/spreadsheets/2006/extended">'
+  row_hash.each_pair do |k, v|
+    xml << "<gsx:#{k}>#{v}</gsx:#{k}>"
+  end
+  xml << "</entry>"
+  begin
+    $gs.request(:post, $sheet.list_feed_url, :data => xml)
+  rescue GoogleDrive::Error => e
+    STDERR.puts e
+  end
+end
+
+# Parse arguments
+
+unless ARGV.size > 2
+  STDERR.puts "Usage= gs-append worksheet-title col1=value col2=value ..."
+  exit 1
+end
+title = ARGV.shift
+data = {}
+ARGV.each do |arg|
+  if arg =~ /^([-a-z0-9]+)=(.*)/
+    data[$1] = $2
+  else
+    STDERR.puts "ERROR: cannot parse argument '#{arg}'"
+    exit 1
+  end
+end
+
+# Append the row of data
+
+puts "RECORDING #{title}: #{data.map{|k,v| "#{k}=#{v}"}.join(" ")}"
+gs_init(title)
+append_row(data)
+exit 0

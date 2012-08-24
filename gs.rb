@@ -20,5 +20,7 @@ def append_row(gs_session, gs_sheet, row_hash={})
     xml << "<gsx:#{k}>#{v}</gsx:#{k}>"
   end
   xml << "</entry>"
-  gs_session.request(:post, gs_sheet.list_feed_url, :data => xml)
+  begin
+    gs_session.request(:post, gs_sheet.list_feed_url, :data => xml)
+  rescue GoogleDrive::Error => e
 end

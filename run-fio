@@ -1,5 +1,6 @@
 #! /bin/bash
 set -x
+PATH=$PATH:/root/cloudbench
 
 df -h
 ls -ls /mnt
@@ -35,7 +36,11 @@ for i in 1 2 3; do
   for d in ebs ebs2 ephemeral; do
     if [ -d /mnt/$d ]; then
       cd /mnt/$d/fio
-      fio $ini | /root/cloudbench/report-fio $CLOUD-$MACHINE $d $sz
+      now=`date "+%Y/%m/%d %H:%M:%S"`
+      label=$CLOUD-$MACHINE-$d
+      fio $ini |& tee /tmp/fio-$$
+      s3-log $label "$now" </tmp/fio-$$
+      report-fio $CLOUD-$MACHINE "$d" "$now" </tmp/fio-$$
     fi
   done
 done
