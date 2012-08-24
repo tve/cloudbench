@@ -41,7 +41,7 @@ for i in 1 2 3; do
       now=`date "+%Y/%m/%d %H:%M:%S"`
       label=$CLOUD-$MACHINE-$d
       fio $ini |& tee /tmp/fio-$$
-      link=`s3-log fio $label "$now" </tmp/fio-$$`
+      link=`s3-log fio $label "$now" /tmp/fio-$$`
       report-fio $CLOUD-$MACHINE "$d" "$now" "$link" </tmp/fio-$$
     fi
   done
