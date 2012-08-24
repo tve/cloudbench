@@ -13,4 +13,6 @@ timestamp = ARGV[1].gsub(/\//, '-')
 text = IO.read(ARGV[2])
 
 b = RightAws::S3.new(s3_id, s3_key).bucket('tve-mcbench')
-b.put("#{label}/#{timestamp}", text, {}, nil, 'Content-Type' => 'text/plain')
+b.put("#{label}/#{timestamp}", text, {}, 'public-read',
+      'Content-Type' => 'text/plain')
+puts "http://tve-mcbench.s3.amazonaws.com/tve-mcbench/#{label}/#{timestamp}"
