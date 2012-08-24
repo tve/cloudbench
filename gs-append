@@ -39,7 +39,7 @@ data = {}
 ARGV.each do |arg|
   if arg =~ /^([-a-z0-9]+)=(.*)/
     k=$1; v=$2
-    v.gsub!(/ /, '%20') if v.begin_with?('http://')
+    v.gsub!(/ /, '%20') if v.start_with?('http://')
     data[k] = v
   else
     STDERR.puts "ERROR: cannot parse argument '#{arg}'"
