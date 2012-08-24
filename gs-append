@@ -38,7 +38,9 @@ title = ARGV.shift
 data = {}
 ARGV.each do |arg|
   if arg =~ /^([-a-z0-9]+)=(.*)/
-    data[$1] = $2
+    k=$1; v=$2
+    v.gsub!(/ /, '%20') if v.begin_with?('http://')
+    data[k] = v
   else
     STDERR.puts "ERROR: cannot parse argument '#{arg}'"
     exit 1
