@@ -8,12 +8,13 @@ unless ARGV.size == 4
   STDERR.puts "Usage: s3-log category label timestamp file"
   exit 1
 end
+bucket = 'tve-mcbench'
 category = ARGV[0]
 label = ARGV[1]
 timestamp = ARGV[2].gsub(/\//, '-')
 text = IO.read(ARGV[3])
+path = "#{category}/#{label}/#{timestamp}"
 
-b = RightAws::S3.new(s3_id, s3_key).bucket('tve-mcbench')
-b.put("#{category}/#{label}/#{timestamp}", text, {}, 'public-read',
-      'Content-Type' => 'text/plain')
-puts "http://tve-mcbench.s3.amazonaws.com/tve-mcbench/#{label}/#{timestamp}"
+b = RightAws::S3.new(s3_id, s3_key).bucket(bucket)
+b.put(path, text, {}, 'public-read', 'Content-Type' => 'text/plain')
+puts "http://#{bucket}.s3.amazonaws.com/#{path}"
