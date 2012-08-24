@@ -2,31 +2,11 @@
 
 require 'rubygems'
 require 'right_aws'
-require 'google_drive'
+
 s3_id  = ENV['AWS_ACCESS_KEY_ID']
 s3_key = ENV['AWS_SECRET_ACCESS_KEY']
 gcs_id  = ENV['GCS_ID']
 gcs_key = ENV['GCS_KEY']
-
-GS='0Aq-daXyC3OSSdFhqY1lORFdHSkdZMjJraTBKa0thQUE'
-#$gs = GoogleDrive.saved_session
-$gs = GoogleDrive::Session.new({:wise => open('.ssh_tok').gets.chomp}, nil)
-$ss = $gs.spreadsheet_by_key(GS)
-ws = "storage " + Time.now.strftime("%Y-%m")
-puts "Spreadsheet: #{$ss.title} / #{ws}"
-$sheet = $ss.worksheet_by_title(ws)
-$sheet ||= $ss.add_worksheet(ws)
-
-def append_row(gs_session, gs_sheet, row_hash={})
-  xml = '<entry xmlns="http://www.w3.org/2005/Atom" xmlns:gsx="http://schemas.google.com/spreadsheets/2006/extended">'
-  row_hash.each_pair do |k, v|
-    k = k.to_s.gsub(/_/, '-')
-    xml << "<gsx:#{k}>#{v}</gsx:#{k}>"
-  end
-  xml << "</entry>"
-  puts xml
-  gs_session.request(:post, gs_sheet.list_feed_url, :data => xml)
-end
 
 def gcs_put(bucket, path, localpath)
   data = IO.read(localpath)
@@ -131,10 +111,13 @@ r.keys.each do |bucket|
       kbs_95   = r[bucket][op][:kbs].sort[pts*5/100]
       printf("%s %s => %.1f %.1f %.0f %.0fKB/s\n", bucket, op, time_avg, time_95, kbs_avg, kbs_95)
 
-      data = { :cloud => ENV['CLOUD'], :machine => ENV['MACHINE'], :bucket => bucket, :op => op,
+      data = {
+        :machine => "#{ENV['CLOUD']}-#{ENV['MACHINE']}",
+        :bucket => bucket, :op => op,
         :successes => pts, :errors => errs, :err_list => err_list,
         :time_avg => time_avg, :time_95 => time_95, :kbs_avg => kbs_avg, :kbs_95 => kbs_95 }
-      append_row($gs, $sheet, data)
+      puts data.inspect
+      system("./gs-append storage #{data.map{|k,v| "'#{k}=#{v}'"}.join(' ')}")
     end
 
   end

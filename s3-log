@@ -4,15 +4,16 @@ require 'right_aws'
 s3_id  = ENV['AWS_ACCESS_KEY_ID']
 s3_key = ENV['AWS_SECRET_ACCESS_KEY']
 
-unless ARGV.size == 3
-  STDERR.puts "Usage: s3-log label timestamp file"
+unless ARGV.size == 4
+  STDERR.puts "Usage: s3-log category label timestamp file"
   exit 1
 end
-label = ARGV[0]
-timestamp = ARGV[1].gsub(/\//, '-')
-text = IO.read(ARGV[2])
+category = ARGV[0]
+label = ARGV[1]
+timestamp = ARGV[2].gsub(/\//, '-')
+text = IO.read(ARGV[3])
 
 b = RightAws::S3.new(s3_id, s3_key).bucket('tve-mcbench')
-b.put("#{label}/#{timestamp}", text, {}, 'public-read',
+b.put("#{category}/#{label}/#{timestamp}", text, {}, 'public-read',
       'Content-Type' => 'text/plain')
 puts "http://tve-mcbench.s3.amazonaws.com/tve-mcbench/#{label}/#{timestamp}"
