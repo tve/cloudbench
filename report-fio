@@ -8,7 +8,8 @@ gr=nil
 t = {
   'name' => info[0], 'options' => info[1],
   'label' => info[0] + '-' + info[1],
-  'time' => info[2]
+  'time' => info[2],
+  'link' => info[3],
 }
 
 while line = STDIN.gets
