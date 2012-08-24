@@ -20,7 +20,7 @@ ini=/root/cloudbench/fio.ini
 echo '===== creating files ============================================='
 
 # create all the files
-for d in xxx; do # ebs ebs2 ephemeral; do
+for d in ebs ebs2 ephemeral; do
   if [ -d /mnt/$d ]; then
     mkdir -p /mnt/$d/fio
     cd /mnt/$d/fio/
