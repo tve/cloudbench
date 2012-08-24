@@ -68,7 +68,7 @@ ec2)
     if ! mount | egrep '/dev/xvdr'; then
       mkdir -p /mnt/ebs2
       mkfs.ext4 -F -q /dev/xvdr
-      mount /dev/xvdq /mnt/ebs2
+      mount /dev/xvdr /mnt/ebs2
     fi
   fi
   ;;
