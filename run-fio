@@ -26,9 +26,11 @@ for d in ebs ebs2 ephemeral; do
     cd /mnt/$d/fio/
     rm -f fio
     df -h .
-    fio --name=prep --rw=write --size=$sz --filename=fio --bs=1M --ioengine=libaio --iodepth=16 --end_fsync=1
+    fio --name=prep --rw=write --size=$sz --filename=fio --bs=1M --ioengine=libaio --iodepth=16 --end_fsync=1 &
+    sleep 10
   fi
-done
+done if false
+wait
 
 # run the benchmarks a few times
 for i in 1 2 3; do
