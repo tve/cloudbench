@@ -60,14 +60,14 @@ ec2)
   if [ -e /dev/xvdq ]; then
     if ! mount | egrep '/dev/xvdq'; then
       mkdir -p /mnt/ebs
-      mkfs.ext4 -F -q /dev/xvdq
+      mkfs.ext4 -F -q -i 100000 /dev/xvdq
       mount /dev/xvdq /mnt/ebs
     fi
   fi
   if [ -e /dev/xvdr ]; then
     if ! mount | egrep '/dev/xvdr'; then
       mkdir -p /mnt/ebs2
-      mkfs.ext4 -F -q /dev/xvdr
+      mkfs.ext4 -F -q -i 100000 /dev/xvdr
       mount /dev/xvdr /mnt/ebs2
     fi
   fi
@@ -77,23 +77,23 @@ google)
   # 8-core box has 2 local disks (vdb and vdc) so net disk becomes vdd and we ignore vdc
   if [ -e /dev/vdd ]; then
     if ! mount | egrep '/dev/vdd'; then
-      mkfs.ext4 -F -q /dev/vdd
+      mkfs.ext4 -F -q -i 100000 /dev/vdd
       mkdir -p /mnt/ebs
       mount /dev/vdd /mnt/ebs
     fi
     if ! mount | egrep '/dev/md0'; then
       mdadm --create --verbose /dev/md0 --level=0 --raid-devices=2 /dev/vdb /dev/vdc
-      mkfs.ext4 -F -q /dev/md0
+      mkfs.ext4 -F -q -i 100000 /dev/md0
       mount /dev/md0 /mnt/ephemeral
     fi
   elif [ -e /dev/vdc ]; then
     if ! mount | egrep '/dev/vdc'; then
-      mkfs.ext4 -F -q /dev/vdc
+      mkfs.ext4 -F -q -i 100000 /dev/vdc
       mkdir -p /mnt/ebs
       mount /dev/vdc /mnt/ebs
     fi
     if ! mount | egrep '/dev/vdb'; then
-      mkfs.ext4 -F -q /dev/vdb
+      mkfs.ext4 -F -q -i 100000 /dev/vdb
       mount /dev/vdb /mnt/ephemeral
     fi
   fi
@@ -109,7 +109,7 @@ azure)
   mv /mnt/ephemeral /mnt/ephem
   if [ -e /dev/sdc ]; then
     if ! mount | egrep '/dev/sdc'; then
-      mkfs.ext4 -F -q /dev/sdc
+      mkfs.ext4 -F -q -i 100000 /dev/sdc
       mkdir -p /mnt/ebs
       mount /dev/sdc /mnt/ebs
     fi
@@ -120,7 +120,7 @@ softlayer)
   if [ -e /dev/xvdc ]; then
     if ! mount | egrep xvdc; then
       yum install e4fsprogs.x86_64 -y &> /dev/null
-      /sbin/mkfs.ext4 -F -q /dev/xvdc
+      /sbin/mkfs.ext4 -F -q -i 100000 /dev/xvdc
       mkdir -p /mnt/ephemeral
       mount /dev/xvdc /mnt/ephemeral
 
@@ -138,7 +138,7 @@ cloudstack)
   if [ -e /dev/vdb ]; then
     if ! mount | egrep vdb; then
       yum install e4fsprogs.x86_64 -y &> /dev/null
-      /sbin/mkfs.ext4 -F -q /dev/vdb
+      /sbin/mkfs.ext4 -F -q -i 100000 /dev/vdb
       mkdir -p /mnt/ebs
       mount /dev/vdb /mnt/ebs
 
@@ -158,7 +158,7 @@ rackspace)
       yum install e4fsprogs.x86_64 -y
       /sbin/parted -s /dev/xvda mkpart primary 10200547328B 81604378622B
       sleep 5 # the new dev may take a few secs to appear?
-      /sbin/mkfs.ext4 -F -q /dev/xvda2
+      /sbin/mkfs.ext4 -F -q -i 100000 /dev/xvda2
       mount /dev/xvda2 /mnt/ephemeral
 
       wget -q http://www.coker.com.au/bonnie++/experimental/bonnie++-1.96.tgz

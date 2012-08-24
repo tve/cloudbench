@@ -114,8 +114,9 @@ r.keys.each do |bucket|
       data = {
         :machine => "#{ENV['CLOUD']}-#{ENV['MACHINE']}",
         :bucket => bucket, :op => op,
-        :successes => pts, :errors => errs, :err_list => err_list,
-        :time_avg => time_avg, :time_95 => time_95, :kbs_avg => kbs_avg, :kbs_95 => kbs_95 }
+        :successes => pts, :errors => errs, 'err-list' => err_list,
+        'time-avg' => time-avg, 'time-95' => time-95,
+        'kbs-avg' => kbs-avg, 'kbs-95' => kbs-95 }
       puts data.inspect
       system("./gs-append storage #{data.map{|k,v| "'#{k}=#{v}'"}.join(' ')}")
     end
