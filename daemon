@@ -1,0 +1,14 @@
+#! /bin/bash
+d="TvE mcbench"
+./launch "$d"
+(while true; do ./launch; sleep 3300; done) &
+while true; do
+  echo "+++++++++++++++++ Launching a round"
+  date
+  for s in `./launch "$d"`; do
+    echo ===== $d $s
+    ./launch "$d" "$s" &>>"$s.log" &
+  done
+  echo "+++++++++++++++++ Everything launched"
+  sleep 3300
+done

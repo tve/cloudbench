@@ -1,0 +1,252 @@
+#!/usr/bin/env ruby
+
+#require 'right_api_client'
+require File.expand_path('../../right_api_client/lib/right_api_client', __FILE__)
+require 'json'
+
+$deployment_name = ARGV[0]
+$server_name     = ARGV[1]
+#puts "deployment=#{$deployment_name} server=#{$server_name}"
+
+#
+# Open right_api_connection and deal with authentication
+#
+
+# Read config file
+$system = File.readable?('.rsrc3') ? JSON.restore(File.open('.rsrc3','r')) : {}
+#puts ".rsrc: #{$system.inspect}"
+$system['host'] ||= 'my.rightscale.com'
+$system['email'] ||= 'someone@rightscale.com'
+
+# Init right_api_client
+loop do
+  if $system.key?('cookies') && $system.key?('host')
+    begin
+      $client = RightApi::Client.new(:cookies => $system['cookies'],
+                                     :api_url => "https://#{$system['host']}",
+                                     :account_id => '60073')
+      break
+    rescue Exception => e
+      $stderr.puts "Can't log in to #{$system['host']} account 60073 using existing cookies", e.inspect
+      $stderr.puts "*** Please log in:"
+    end
+  elsif $system.key?('email') && $system.key?('pw') && $system.key?('host')
+    begin
+      $client = RightApi::Client.new(:email => $system['email'], :password => $system['pw'],
+                                     :api_url => "https://#{$system['host']}",
+                                     :account_id => '60073')
+      break
+    rescue Exception => e
+      $stderr.puts "Can't log in to #{$system['host']} account 60073 as #{$system['email']}:", e.inspect
+      $stderr.puts "*** Please log in:"
+    end
+  end
+  $system.delete 'cookies'
+  $stderr.printf "system [#{$system['host']}]: "
+  host = STDIN.readline
+  $system['host'] = host.chomp if host.size > 1
+  $stderr.printf "email  [#{$system['email']}]: "
+  email = STDIN.readline
+  $system['email'] = email.chomp if email.size > 1
+  system "stty -echo"
+  $stderr.printf "pw     [#{"*"*($system['pw']||"").size}]: "
+  pw = STDIN.readline
+  system "stty echo"
+  $system['pw'] = pw.chomp if pw.size > 1
+  $stderr.puts "*"*($system['pw']||"").size
+end
+$system.delete('pw')
+$system['cookies'] = $client.cookies
+File.open(".rsrc3", "w") do |f| JSON.dump($system, f) end
+
+#
+# Helper functions
+#
+
+def launch(server)
+  puts "Launching #{server.next_instance.show.cloud.show.cloud_type} server"
+  #puts server.show(:foo=>'foo').inspect
+  server.launch
+  sleep 1
+  while (server=server.show(:foo=>'foo')).state == 'inactive'
+    puts "    Waiting for server #{server.name} to get going..."
+    sleep 10
+  end
+  puts "    Server is launching => #{server.name} #{server.href}"
+end
+
+def wait_done(server)
+  puts "Waiting for server #{server.name} to be done"
+  loop do
+    instance=server.show(:foo=>'foo').current_instance.show
+    tags = $client.tags.by_resource(:resource_hrefs => [instance.href])
+    if !tags.nil? && tags.size >= 0
+      tags = tags.first.tags
+      break if tags.index{|t|t.values.index{|v| v.start_with?("mcbench:done=")}}
+    end
+    puts "    Still waiting for server #{server.name} to be done..."
+    sleep 120
+  end
+end
+
+def finish(server)
+  puts "Terminating server #{server.name}"
+  server.terminate
+  while server.show(:foo=>'foo').state != 'inactive'
+    puts "    Waiting for server #{server.name} to terminate..."
+    sleep 60
+  end
+  puts "Deleting server #{server.name}"
+  server.destroy
+end
+
+def attach_volume(server, gb, tipe, opt)
+  puts "Attaching a volume of #{gb}GB and type #{tipe}"
+end
+
+#
+# Take-over a GCE instance
+#
+
+def gce_takeover(i_name, sz, cloud)
+  puts "Taking over instance #{i_name} adding #{sz}GB disk"
+  exit 1 unless i_name =~ /^i-/ && sz.to_i > 0
+
+  i_info = `gcutil getinstance #{i_name} --print_json`
+  unless i_info =~ /^\{/
+    puts "Error: #{i_info}"
+    exit 1
+  end
+  i_info = JSON.parse(i_info)
+  unless i_info['metadata']
+    puts "Error: no metadata found in #{i_info}"
+    exit 1
+  end
+
+  cmd = "gcutil adddisk #{i_name}-disk --size_gb=#{sz} --zone=#{i_info['zone']} " +
+        "--wait_until_complete --log_level=WARNING"
+  puts cmd
+  system(cmd) || exit(1)
+
+  cmd = "gcutil addinstance #{i_name}-disk --image=#{i_info['image']} " +
+        "--machine_type=#{i_info['machineType']} --zone=#{i_info['zone']} " +
+        "--disk=#{i_name}-disk " +
+        "--tags=#{i_info['tags'].join(',')} --log_level=WARNING " +
+        i_info['metadata']['items'].map{|m|
+          "--metadata=#{m['key']}:#{m['value']}"
+        }.join(' ')
+  puts cmd
+  system(cmd) || exit(1)
+
+  loop do
+    i = cloud.instances.index(:filter => ["name==#{i_name}-disk"])
+    return i.first.show if !i.nil? && i.size > 0
+    puts "    Wait 'til instance #{i_name}-disk is discovered"
+    sleep 60
+  end
+end
+
+#
+# Special stuff
+#
+
+if $deployment_name.nil?
+  puts "Cookie has been refreshed, exiting..."
+  exit 0
+end
+
+#
+# Launch and instance, then wait for it to be done and terminate it
+#
+
+account_id = $client.instance_variable_get '@account_id'
+deployment = $client.deployments.index(:filter => ["name==#{$deployment_name}"])
+unless deployment && deployment.size > 0
+  puts "Can't find deployment #{$deployment_name}"
+  exit 1
+end
+deployment = deployment[0].show
+
+# If we just have a deployment name, then enumerate all the server names
+if $server_name.nil?
+  servers    = $client.servers.index(:filter => ["deployment_href==#{deployment.href}"])
+  puts (servers||[]).select{|s| s.name !~ /v\d+$/}.map{|s|s.name}.join(' ')
+  exit 0
+end
+
+puts "*** Launching server #{$server_name} in deployment #{$deployment_name}"
+
+servers    = $client.servers.index(:filter => ["deployment_href==#{deployment.href}",
+                                               "name==#{$server_name}"])
+server     = (servers||[]).select{|s| s.name == $server_name}
+unless server && server.size > 0
+  puts "Can't find server matching #{$server_name}"
+  exit 1
+end
+server     = servers[0].show
+server_id  = server.href.split('/').last
+next_i     = server.next_instance.show
+
+puts "Cloning the server"
+new_id = nil
+begin
+  $client.do_put("/acct/#{account_id}/servers/#{server_id}/duplicate")
+rescue RightApi::Exceptions::ApiException => e
+  #puts "Exception: #{e.to_s}"
+  if e.to_s =~ /servers\/(\d+)".redirected/
+    new_id = $1
+  else
+    raise
+  end
+end
+server = $client.servers(:id => new_id).show
+
+case next_i.cloud.show.cloud_type
+
+when "sunrise", "google"
+  launch(server)
+  server = server.show(:foo=>'foo')
+  c_inst = server.current_instance.show
+  #puts c_inst.inspect
+  inst2 = gce_takeover(c_inst.resource_uid.split('/').last, 200, c_inst.cloud.show)
+  puts inst2.inspect
+  wait_done(server)
+  finish(server)
+  #finish(server2)
+
+when "amazon", "ec2"
+  launch(server)
+  attach_volume(server, 1000, :standard, 0)
+  attach_volume(server, 1000, :io1, 1000)
+  wait_done(server)
+  finish(server)
+
+when "rackspace"
+  launch(server)
+  wait_done(server)
+  finish(server)
+
+when "azure"
+  launch(server)
+  wait_done(server)
+  finish(server)
+
+when "softlayer", "soft_layer"
+  launch(server)
+  wait_done(server)
+  finish(server)
+
+when "cloudstack", "cloud_stack"
+  launch(server)
+  wait_done(server)
+  finish(server)
+
+else
+  puts "Dunno what to do with cloud #{next_i.cloud.show.cloud_type}"
+  exit 1
+
+end
+puts "Done! #{Time.now}"
+
+
+
