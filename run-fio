@@ -9,11 +9,12 @@ cd /root
 gb_mem=`ruby -n -e '$_ =~ /MemTotal/ && puts($_.split[1].to_i/1024/1024)' /proc/meminfo`
 sz=
 if [ $gb_mem -lt 20 ]; then
-  sz="40G"
+  sz="40"
 else
-  sz=`expr $gb_mem \* 2`G
+  sz=`expr $gb_mem \* 2`
 fi
-#sz=1G
+szb=`expr $sz \* 1000000`
+sz="${sz}G"
 
 ini=/root/cloudbench/fio.ini
 
@@ -24,9 +25,11 @@ for d in ebs ebs2 ephemeral; do
   if [ -d /mnt/$d ]; then
     mkdir -p /mnt/$d/fio
     cd /mnt/$d/fio/
-    rm -f fio
+    if -f fio && [[ `stat -c %s fio` -ge $szb ]]; then
+      rm -f fio
+      fio --name=prep --rw=write --size=$sz --filename=fio --bs=1M --ioengine=libaio --iodepth=16 --end_fsync=1 &
+    fi
     df -h .
-    fio --name=prep --rw=write --size=$sz --filename=fio --bs=1M --ioengine=libaio --iodepth=16 --end_fsync=1 &
     sleep 10
   fi
 done
