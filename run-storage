@@ -17,7 +17,7 @@ def gcs_put(bucket, path, localpath)
   code = begin
     bucket.s3.interface.request_info(req, RightAws::RightHttp2xxParser.new)
     '200'
-  rescue AwsError => e
+  rescue RightAws::AwsError => e
     puts e.message
     e.http_code
   end

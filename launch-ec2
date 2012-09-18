@@ -1,0 +1,180 @@
+#!/usr/bin/env ruby
+
+#require 'right_api_client'
+require File.expand_path('../../right_api_client/lib/right_api_client', __FILE__)
+require 'json'
+
+$deployment_name = ARGV[0]
+$server_name     = ARGV[1]
+#puts "deployment=#{$deployment_name} server=#{$server_name}"
+
+#
+# Open right_api_connection and deal with authentication
+#
+
+# Read config file
+$system = File.readable?('.rsrc') ? JSON.restore(File.open('.rsrc','r')) : {}
+#puts ".rsrc: #{$system.inspect}"
+$system['host'] ||= 'my.rightscale.com'
+$system['email'] ||= 'someone@rightscale.com'
+
+# Init right_api_client
+loop do
+  if $system.key?('cookies') && $system.key?('host')
+    begin
+      $client = RightApi::Client.new(:cookies => $system['cookies'],
+                                     :api_url => "https://#{$system['host']}",
+                                     :account_id => '71')
+      break
+    rescue Exception => e
+      $stderr.puts "Can't log in to #{$system['host']} account 71 using existing cookies", e.inspect
+      $stderr.puts "*** Please log in:"
+    end
+  elsif $system.key?('email') && $system.key?('pw') && $system.key?('host')
+    begin
+      $client = RightApi::Client.new(:email => $system['email'], :password => $system['pw'],
+                                     :api_url => "https://#{$system['host']}",
+                                     :account_id => '71')
+      break
+    rescue Exception => e
+      $stderr.puts "Can't log in to #{$system['host']} account 71 as #{$system['email']}:", e.inspect
+      $stderr.puts "*** Please log in:"
+    end
+  end
+  $system.delete 'cookies'
+  $stderr.printf "system [#{$system['host']}]: "
+  host = STDIN.readline
+  $system['host'] = host.chomp if host.size > 1
+  $stderr.printf "email  [#{$system['email']}]: "
+  email = STDIN.readline
+  $system['email'] = email.chomp if email.size > 1
+  system "stty -echo"
+  $stderr.printf "pw     [#{"*"*($system['pw']||"").size}]: "
+  pw = STDIN.readline
+  system "stty echo"
+  $system['pw'] = pw.chomp if pw.size > 1
+  $stderr.puts "*"*($system['pw']||"").size
+end
+$system.delete('pw')
+$system['cookies'] = $client.cookies
+File.open(".rsrc", "w") do |f| JSON.dump($system, f) end
+
+# API 1.0 client
+
+$api10 = RestClient::Resource.new("https://my.rightscale.com", :timeout => -1)
+$h10 = {'X_API_VERSION' => '1.0', :cookies => $client.cookies }
+
+#
+# Helper functions
+#
+
+def clone(server)
+  server_id  = server['href'].split('/').last
+  puts "Cloning server #{server_id}"
+  new_id = nil
+  begin
+    $client.do_put("/acct/#{$account_id}/servers/#{server_id}/duplicate")
+  rescue RightApi::Exceptions::ApiException => e
+    #puts "Exception: #{e.to_s}"
+    if e.to_s =~ /servers\/(\d+)".redirected/
+      new_id = $1
+    else
+      raise
+    end
+  end
+  JSON.restore $api10["/api/acct/#{$account_id}/servers/#{new_id}.js"].get($h10)
+end
+
+def launch(server)
+  puts "Launching EC2 server"
+  RestClient.post(server['href']+'/start', '', $h10)
+  sleep 1
+  while (server=JSON.restore RestClient.get(server['href']+'.js', $h10))['state'] == 'stopped'
+    puts "    Waiting for server #{server['nickname']} to get going..."
+    sleep 10
+  end
+  puts "    Server is launching => #{server['nickname']} #{server['href']}"
+  server
+end
+
+def wait_done(server)
+  puts "Waiting for server #{server['nickname']} to be done"
+  loop do
+    instance_href = server['current_instance_href']
+    tags = JSON.restore $api10["/api/acct/#{$account_id}/tags/search.js?resource_href=#{instance_href}"].get($h10)
+    if !tags.nil? && tags.size > 0
+      #puts tags.inspect
+      break if tags.index{|t|t.values.index{|v| v.start_with?("mcbench:done=")}}
+    end
+    puts "    Still waiting for server #{server['nickname']} to be done..."
+    sleep 120
+  end
+end
+
+def finish(server)
+  puts "Terminating server #{server['nickname']}"
+  settings = JSON.restore(RestClient.get(server['href']+'/settings.js', $h10))
+  instance_id = settings["aws-id"]
+  cloud_id = settings["cloud_id"]
+  volumes = JSON.restore $api10["/api/acct/#{$account_id}/ec2_ebs_volumes.js?cloud_id=#{cloud_id}"].get($h10)
+  volumes = volumes.select{|v| v["description"] =~ /for #{instance_id}/}
+  puts "Found #{volumes.size} volumes: #{volumes.inspect}"
+  RestClient.post(server['href']+'/stop', '', $h10)
+  while (server=JSON.restore RestClient.get(server['href']+'.js', $h10))['state'] != 'stopped'
+    puts "    Waiting for server #{server['nickname']} to terminate..."
+    sleep 60
+  end
+  if volumes.size > 0
+    puts "Deleting #{volumes.size} volumes"
+    volumes.each do |v|
+      RestClient.delete(v['href'], $h10)
+    end
+  end
+  puts "Deleting server #{server['nickname']}"
+  RestClient.delete(server['href'], $h10)
+end
+
+#
+# Special stuff
+#
+
+if $deployment_name.nil?
+  puts "Cookie has been refreshed, exiting..."
+  exit 0
+end
+
+#
+# Launch and instance, then wait for it to be done and terminate it
+#
+
+$account_id = $client.instance_variable_get '@account_id'
+deployment = JSON.restore($api10["/api/acct/#{$account_id}/deployments.js?filter=nickname=#{$deployment_name.gsub(/ /, '%20')}"].get($h10))
+unless deployment && deployment.size > 0
+  puts "Can't find deployment #{$deployment_name}"
+  exit 1
+end
+deployment = deployment[0]
+
+# If we just have a deployment name, then enumerate all the server names
+if $server_name.nil?
+  puts deployment['servers'].map{|s|s['nickname']}.select{|n| n =~ /-ec2-/ && n !~ /v\d+$/}.join(' ')
+  
+else
+
+  puts "*** Launching server #{$server_name} in deployment #{$deployment_name}"
+
+  server = deployment['servers'].select{|s| s['nickname'] == $server_name}.first
+  unless server
+    puts "Can't find server matching #{$server_name}"
+    exit 1
+  end
+  server     = clone(server)
+
+  server = launch(server)
+  wait_done(server)
+  finish(server)
+
+  puts "Done! #{Time.now}"
+
+end
+

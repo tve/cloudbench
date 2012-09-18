@@ -215,36 +215,6 @@ def finish(server)
   server.destroy
 end
 
-def full_launch(server)
-  case server.next_instance.show.cloud.show.cloud_type
-  when "sunrise", "google"
-    volume = create_volume(server, 200)
-    attach_launch(server, volume)
-    wait_launched(server)
-    server.show(:foo=>'foo')
-  when "softlayer", "soft_layer", "cloudstack", "cloud_stack", "rackspace", "azure"
-    launch(server)
-    wait_launched(server)
-    server.show(:foo=>'foo')
-  else
-    puts "Dunno what to do with cloud #{next_i.cloud.show.cloud_type}"
-    raise "Unknown cloud type"
-  end
-end
-
-def find_clone_server(server_name)
-  puts "*** Launching server #{server_name} in deployment #{$deployment_name}"
-  servers = $client.servers.index(:filter => ["deployment_href==#{deployment.href}",
-                                              "name==#{server_name}"])
-  server = (servers||[]).select{|s| s.name == server_name}
-  unless server && server.size > 0
-    puts "Can't find server matching #{server_name}"
-    raise "No server matching #{server_name}"
-  else
-    clone(servers[0].show)
-  end
-end
-
 #
 # Special stuff
 #
@@ -271,14 +241,125 @@ if $server_name.nil?
   puts (servers||[]).select{|s| s.name !~ /v\d+$/}.map{|s|s.name}.join(' ')
 
 else
-  server = find_clone_server($server_name)
-  server = full_launch(server)
-
   Ripl.start(:binding => binding) if $irb
+  puts "*** Launching server #{$server_name} in deployment #{$deployment_name}"
 
-  run_bench(server, 'fio')
-  finish(server)
+  servers    = $client.servers.index(:filter => ["deployment_href==#{deployment.href}",
+                                                 "name==#{$server_name}"])
+  server     = (servers||[]).select{|s| s.name == $server_name}
+  unless server && server.size > 0
+    puts "Can't find server matching #{$server_name}"
+    exit 1
+  end
+  server     = clone(servers[0].show)
+  next_i     = server.next_instance.show
 
+  case next_i.cloud.show.cloud_type
+
+  when "sunrise", "google"
+    volume = create_volume(server, 200)
+    attach_launch(server, volume)
+    wait_launched(server)
+    server = server.show(:foo=>'foo')
+    run_bench(server, 'fio')
+    finish(server)
+
+
+    #server = server.show(:foo=>'foo')
+    #c_inst = server.current_instance.show
+    #c_id = c_inst.resource_uid.split('/').last
+    ##puts c_inst.inspect
+    #inst2 = gce_takeover(c_id, 200, c_inst.cloud.show)
+    #puts inst2.inspect
+    #wait_done(server)
+    #finish(server)
+    #gce_cleanup(c_id)
+
+  when "rackspace"
+    launch(server)
+    wait_done(server)
+    finish(server)
+
+  when "azure"
+    launch(server)
+    wait_done(server)
+    finish(server)
+
+  when "softlayer", "soft_layer"
+    launch(server)
+    wait_done(server)
+    finish(server)
+
+  when "cloudstack", "cloud_stack"
+    launch(server)
+    wait_done(server)
+    finish(server)
+
+  else
+    puts "Dunno what to do with cloud #{next_i.cloud.show.cloud_type}"
+    exit 1
+
+  end
   puts "Done! #{Time.now}"
 
 end
+
+#
+# Take-over a GCE instance
+#
+
+def gce_takeover(i_name, sz, cloud)
+  puts "Taking over instance #{i_name} adding #{sz}GB disk"
+  exit 1 unless i_name =~ /^i-/ && sz.to_i > 0
+
+  i_info = `gcutil getinstance #{i_name} --print_json`
+  unless i_info =~ /^\{/
+    puts "Error: #{i_info}"
+    exit 1
+  end
+  i_info = JSON.parse(i_info)
+  unless i_info['metadata']
+    puts "Error: no metadata found in #{i_info}"
+    exit 1
+  end
+
+  cmd = "gcutil adddisk #{i_name}-disk --size_gb=#{sz} --zone=#{i_info['zone']} " +
+        "--wait_until_complete --log_level=WARNING"
+  puts cmd
+  system(cmd) || exit(1)
+
+  cmd = "gcutil addinstance #{i_name}-disk --image=#{i_info['image']} " +
+        "--machine_type=#{i_info['machineType']} --zone=#{i_info['zone']} " +
+        "--disk=#{i_name}-disk " +
+        "--tags=#{i_info['tags'].join(',')} --log_level=WARNING " +
+        i_info['metadata']['items'].map{|m|
+          "--metadata=#{m['key']}:#{m['value']}"
+        }.join(' ')
+  puts cmd
+  system(cmd) || exit(1)
+
+  loop do
+    i = cloud.instances.index(:filter => ["name==#{i_name}-disk"])
+    return i.first.show if !i.nil? && i.size > 0
+    puts "    Wait 'til instance #{i_name}-disk is discovered"
+    sleep 60
+  end
+end
+
+def gce_cleanup(i_name)
+  cmd = "gcutil deleteinstance -f #{i_name}-disk"
+  puts cmd
+  system(cmd) || exit(1)
+
+  loop do
+    cmd = "gcutil listinstances | egrep -q #{i_name}-disk"
+    system(cmd) || break
+    puts "    Wait 'til instance #{i_name}-disk terminates"
+    sleep 60
+  end
+
+  cmd = "gcutil deletedisk -f #{i_name}-disk"
+  puts cmd
+  system(cmd) || exit(1)
+end
+
