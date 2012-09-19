@@ -8,7 +8,7 @@ gr=nil
 t = {
   'name' => info[0], 'options' => info[1],
   'label' => info[0] + '-' + info[1],
-  'instance' => info[2],
+  'instance' => info[2].sub(/.*\//, ''),
   'time' => info[3],
   'link' => info[4],
 }
