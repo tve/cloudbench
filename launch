@@ -267,7 +267,7 @@ $deployment = deployment[0].show
 
 # If we just have a deployment name, then enumerate all the server names
 if $server_name.nil?
-  servers    = $client.servers.index(:filter => ["deployment_href==#{deployment.href}"])
+  servers    = $client.servers.index(:filter => ["deployment_href==#{$deployment.href}"])
   puts (servers||[]).select{|s| s.name !~ /v\d+$/}.map{|s|s.name}.join(' ')
 
 else

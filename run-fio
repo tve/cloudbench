@@ -35,7 +35,9 @@ for d in ebs ebs2 ephemeral; do
     sleep 10
   fi
 done
+ps
 wait
+ps
 
 # run the benchmarks a few times
 for i in 1 2 3; do
