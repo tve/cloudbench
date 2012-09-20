@@ -17,6 +17,7 @@ szb=`expr $sz \* 1000000`
 sz="${sz}G"
 
 ini=/root/cloudbench/fio.ini
+ini2=/root/cloudbench/fio-short.ini
 
 echo '===== creating files ============================================='
 
@@ -25,6 +26,10 @@ for d in ebs ebs2 ephemeral; do
   if [ -d /mnt/$d ]; then
     mkdir -p /mnt/$d/fio
     cd /mnt/$d/fio/
+    # create file for short/quick performance tests
+    rm -f short
+    fio --name=prep --rw=write --size=1G --filename=short --bs=1M --ioengine=libaio --iodepth=16 --end_fsync=1 &
+    # create file for long performance tests if it doesn't already exist
     if [[ -f fio ]] && [[ `stat -c %s fio` -ge $szb ]]; then
       echo "Using file as-is"
     else
@@ -39,7 +44,20 @@ ps
 wait
 ps
 
-# run the benchmarks a few times
+# run the quick benchmarks once
+  echo "===== quick run ============================================================"
+  for d in ebs ebs2 ephemeral; do
+    if [ -d /mnt/$d ]; then
+      cd /mnt/$d/fio
+      now=`date "+%Y/%m/%d %H:%M:%S"`
+      label=$CLOUD-$MACHINE-$d
+      fio $ini2 2>&1 | tee /tmp/fio-$$
+      link=`s3-log fio $label "$now" /tmp/fio-$$ | egrep 'http:'`
+      report-fio $CLOUD-$MACHINE "quick-$d" "$INSTANCE_ID" "$now" "$link" </tmp/fio-$$
+    fi
+  done
+done
+# run the long benchmarks a few times
 for i in 1 2 3; do
   echo "===== benchmark run $i == $i $i $i $i $i $i $i $i $i $i $i $i $i $i $i $i $i ====="
   for d in ebs ebs2 ephemeral; do
