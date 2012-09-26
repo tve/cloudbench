@@ -58,7 +58,7 @@ r={}
     b = gcs ? RightAws::S3.new(gcs_id, gcs_key, :server => 'commondatastorage.googleapis.com') \
             : RightAws::S3Generator.new(s3_id, s3_key)
     b = b.bucket(bucket)
-    [:put, :get].each do |op|
+    [:put, :old, :get].each do |op|
       %w{random-10k random-10m}.each do |file|
         case op
         when :put

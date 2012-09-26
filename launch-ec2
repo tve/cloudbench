@@ -3,7 +3,18 @@
 #require 'right_api_client'
 require File.expand_path('../../right_api_client/lib/right_api_client', __FILE__)
 require 'json'
+require 'time'
+require 'ripl'
 
+$irb = false
+$launch=true
+while(ARGV[0] =~ /^-/) do
+  a = ARGV.shift
+  case a
+  when '-i' then $irb = true
+  when '-t' then $launch = false
+  end
+end
 $deployment_name = ARGV[0]
 $server_name     = ARGV[1]
 #puts "deployment=#{$deployment_name} server=#{$server_name}"
@@ -94,7 +105,52 @@ def launch(server)
     sleep 10
   end
   puts "    Server is launching => #{server['nickname']} #{server['href']}"
+  while (server=JSON.restore RestClient.get(server['href']+'.js', $h10))['state'] != 'operational'
+    puts "    Waiting for server #{server['nickname']} to become operational..."
+    sleep 30
+  end
+  puts "    Server is operational"
   server
+end
+
+def launch_time(server)
+  $h10xhr = $h10
+  $h10xhr[:x_requested_with]="XMLHttpRequest"
+  instance_id = server['current_instance_href'].split('/').last
+  puts "Instance ID: #{instance_id}"
+  url = "https://my.rightscale.com/acct/#{$account_id}/audit_entries?auditee_id=#{instance_id}&auditee_type=Ec2Instance"
+  ae_text = RestClient.get(url, $h10xhr)
+  aes = ae_text.scan(%r{\?at=[^>]+>([^<]+)<.*?/audit_entries/(\d+)"[^>]+>([^<]*)<}m)
+  puts "Found #{aes.size} audit entries"
+  ae1 = aes.select{|ts,id,summary| summary == "pending"}.first
+  ae2 = aes.select{|ts,id,summary| summary == "Managed login enabled"}.first
+  puts ae1.join(' ')
+  puts ae2.join(' ')
+  if ae1 && ae2
+    t1 = Time.parse(ae1.first)
+    t2 = Time.parse(ae2.first)
+    puts "    Boot took: #{t2-t1} seconds"
+  end
+end
+
+def run_bench(server, name)
+  script_href = case name
+  when 'fio' then "/api/acct/71/right_scripts/351696001"
+  when 'storage' then "/api/acct/71/right_scripts/328836001"
+  else "unknown"
+  end
+  puts "Running script #{script_href}"
+  params = { :server => { :right_script_href => script_href }}
+  res = RestClient.post(server['href']+"/run_script.js", params, $h10)
+  ae_href = res.headers[:location]
+  Ripl.start(:binding => binding) if $irb
+  loop do
+    ae = JSON.restore RestClient.get(ae_href + '.js', $h10)
+    puts "    Summary: #{ae['summary']}" unless ae['summary'].start_with?("RightScript:")
+    return true if ae['summary'].start_with?("completed:")
+    return false if ae['summary'].start_with?("failed:")
+    sleep 60
+  end
 end
 
 def wait_done(server)
@@ -144,7 +200,7 @@ if $deployment_name.nil?
 end
 
 #
-# Launch and instance, then wait for it to be done and terminate it
+# Launch an instance, then wait for it to be done and terminate it
 #
 
 $account_id = $client.instance_variable_get '@account_id'
@@ -168,13 +224,17 @@ else
     puts "Can't find server matching #{$server_name}"
     exit 1
   end
-  server     = clone(server)
 
-  server = launch(server)
-  wait_done(server)
+  if $launch
+    server = clone(server)
+    server = launch(server)
+    launch_time(server)
+  end
+  Ripl.start(:binding => binding) if $irb
+
+  run_bench(server, 'storage')
   finish(server)
 
   puts "Done! #{Time.now}"
 
 end
-

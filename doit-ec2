@@ -1,0 +1,12 @@
+#! /bin/bash
+d="TvE mcbench"
+./launch-ec2 "$d"
+for s in `./launch-ec2 "$d"`; do
+  echo ===== $d $s
+  if expr match "$s" '.*4xl.*' >/dev/null; then
+    echo "  skipping 4xl"
+  else
+    echo ===== `date` ==================================================== >>"$s.log"
+    ./launch-ec2 "$d" "$s" &>>"$s.log" &
+  fi
+done

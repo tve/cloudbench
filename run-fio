@@ -40,23 +40,22 @@ for d in ebs ebs2 ephemeral; do
     sleep 10
   fi
 done
-ps
 wait
-ps
+ps | egrep fio
 
 # run the quick benchmarks once
-  echo "===== quick run ============================================================"
-  for d in ebs ebs2 ephemeral; do
-    if [ -d /mnt/$d ]; then
-      cd /mnt/$d/fio
-      now=`date "+%Y/%m/%d %H:%M:%S"`
-      label=$CLOUD-$MACHINE-$d
-      fio $ini2 2>&1 | tee /tmp/fio-$$
-      link=`s3-log fio $label "$now" /tmp/fio-$$ | egrep 'http:'`
-      report-fio $CLOUD-$MACHINE "quick-$d" "$INSTANCE_ID" "$now" "$link" </tmp/fio-$$
-    fi
-  done
+echo "===== quick run ============================================================"
+for d in ebs ebs2 ephemeral; do
+  if [ -d /mnt/$d ]; then
+    cd /mnt/$d/fio
+    now=`date "+%Y/%m/%d %H:%M:%S"`
+    label=$CLOUD-$MACHINE-$d
+    fio $ini2 2>&1 | tee /tmp/fio-$$
+    link=`s3-log fio $label "$now" /tmp/fio-$$ | egrep 'http:'`
+    report-fio $CLOUD-$MACHINE "quick-$d" "$INSTANCE_ID" "$now" "$link" </tmp/fio-$$
+  fi
 done
+
 # run the long benchmarks a few times
 for i in 1 2 3; do
   echo "===== benchmark run $i == $i $i $i $i $i $i $i $i $i $i $i $i $i $i $i $i $i ====="

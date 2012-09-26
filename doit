@@ -3,5 +3,6 @@ d="TvE mcbench"
 ./launch "$d"
 for s in `./launch "$d"`; do
   echo ===== $d $s
+  echo ===== `date` ==================================================== >>"$s.log"
   ./launch "$d" "$s" &>>"$s.log" &
 done
