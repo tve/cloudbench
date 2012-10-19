@@ -1,98 +1,234 @@
 #! /usr/bin/env ruby
-
 require 'rubygems'
 require 'right_aws'
+#require File.expand_path('../../right_aws/lib/right_aws', __FILE__)
+#require 'right_cloud_api'
+require File.expand_path('../../right_cloud_api_private/lib/right_cloud_api', __FILE__)
+require 'cloud/azure/storage/manager'
+require 'json'
+require 'hmac'
+require 'ripl' 
+def ripl(b) Ripl.start(:binding => b||binding) end
 
-s3_id  = ENV['AWS_ACCESS_KEY_ID']
-s3_key = ENV['AWS_SECRET_ACCESS_KEY']
+#
+# Configuration
+#
+
+ITERATIONS = 10            # how many time to perform each individual test
+buckets    = %w{gcs-us gcs-eu
+                s3-us-east s3-us-oregon s3-europe s3-ap-singapore s3-ap-tokyo s3-sa-saopaulo
+                azure-rightscaleeastasia azure-rightscaleeastus azure-rightscalenortheurope
+                azure-rightscalesoutheastasia azure-rightscalewesteurope azure-rightscalewestus
+}
+FILES      = %w{random-10k} #%w{random-10k random-10m}
+
+# S3 uses TVE-GRID creds
+s3_id   = ENV['AWS_ACCESS_KEY_ID']
+s3_key  = ENV['AWS_SECRET_ACCESS_KEY']
+# GCS uses RightScale TEST creds
 gcs_id  = ENV['GCS_ID']
 gcs_key = ENV['GCS_KEY']
+az_keys = ENV['AZ_KEYS']
 
-def gcs_put(bucket, path, localpath)
-  data = IO.read(localpath)
+$instance = ENV['INSTANCE_ID']
+
+$init = ARGV[0] == '-I'; ARGV.shift if $init
+
+#az = RightScale::CloudApi::Azure::Storage::Manager.new('rightscaleeastus',
+#    'f68eB21QN1hY/67Rsw1ZMx+qdHaxATPUAOtVYebAMdwVCcYwC4ngFiMg8Do7hQNTYiE4KNtoyKlPJSdxUglZDQ==',
+#    'http://rightscaleeastus.blob.core.windows.net/',
+#    :use_ssl => true,
+#    :api_version => '2012-02-12')
+#az.cloud_api_logger.logger.level = Logger::DEBUG
+
+#
+# GET and PUT methods, both return a hash of:
+# { :http_code => int, :time => float-seconds, :size => bytes }
+#
+
+def timed_get(bucket, path)
   t = Time.now
-  #bucket.put(file+'-old', f, {}, 'public-read')
-  req = bucket.s3.interface.generate_rest_request('PUT', :url=>"#{bucket.name}/#{CGI::escape path}",
-                                                  'x-amz-acl' => 'public-read', :data=>data)
-  code = begin
-    bucket.s3.interface.request_info(req, RightAws::RightHttp2xxParser.new)
-    '200'
-  rescue RightAws::AwsError => e
-    puts e.message
-    e.http_code
+  code, size = if bucket.start_with?("gcs")
+    gcs_get(bucket, path)
+  elsif bucket.start_with?("s3")
+    s3_get(bucket, path)
+  elsif bucket.start_with?("azure")
+    azure_get(bucket.split('-')[1], path)
+  else
+    raise "Unknown bucket provider: #{bucket}"
   end
   t = Time.now - t
-  printf("Uploading %s took %.1f for %d bytes\n", path, t, data.size)
-  "STATS #{code} #{t} #{data.size/t} 0"
+  printf("Downloading %s took %.1fs for %d bytes\n", path, t, size)
+  [ code, t, size ]
 end
 
-w_fmt = "STATS %{http_code} %{time_total} %{speed_upload} %{speed_download}"
-
-s3_buckets = %w{gcs-us gcs-eu s3-us-east s3-us-oregon s3-europe s3-ap-singapore s3-ap-tokyo s3-sa-saopaulo}
-
-system 'dd if=/dev/urandom of=/tmp/random-10m bs=1K count=10K'
-system 'dd if=/dev/urandom of=/tmp/random-10k bs=1K count=10'
-
-# put all the "old" files in place, this should only be run when creating fresh buckets
-s3_buckets.each do |bucket|
-  if bucket.start_with?('gcs')
-    b = RightAws::S3.new(gcs_id, gcs_key, :server => 'commondatastorage.googleapis.com').bucket(bucket)
-    %w{random-10k random-10m}.each do |file|
-      puts "===== Uploading #{file}-old to GCS #{bucket}"
-      info = gcs_put(b, file+'-old', "/tmp/#{file}")
-    end
+def timed_put(bucket, path, data)
+  t = Time.now
+  code, size = if bucket.start_with?("gcs")
+    gcs_put(bucket, path, data)
+  elsif bucket.start_with?("s3")
+    s3_put(bucket, path, data)
+  elsif bucket.start_with?("azure")
+    azure_put(bucket.split('-')[1], path, data)
   else
-    b = RightAws::S3Generator.new(s3_id, s3_key).bucket(bucket)
-    %w{random-10k random-10m}.each do |file|
-      puts "===== Uploading #{file}-old to S3 #{bucket}"
-      info = `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file+'-old')}'`
+    raise "Unknown bucket provider: #{bucket}"
+  end
+  t = Time.now - t
+  printf("Uploading %s took %.1fs for %d bytes\n", path, t, size)
+  [ code, t, size ]
+end
+
+#
+# Azure GET and PUT
+#
+
+$az = {}
+JSON.restore(Base64.decode64(az_keys)).each_pair do |k,v|
+  $az[k] = RightScale::CloudApi::Azure::Storage::Manager.new(k, v,
+      "https://#{k}.blob.core.windows.net/", :use_ssl => true, :api_version => '2012-02-12')
+end
+
+def azure_get(bucket, path)
+  begin
+    handle = $az[bucket]
+    res = handle.GetBlob(:Container => 'tve-mcbench', :Blob => path)
+    [ 200, res.size ]
+  rescue RightScale::CloudApi::CloudError => e
+    puts e.message
+    [ 600, 0 ]
+  end
+end
+
+def azure_put(bucket, path, data)
+  begin
+    handle = $az[bucket]
+    res = handle.PutBlob(:Container => 'tve-mcbench', :Blob => path, :BlobType => 'BlockBlob',
+                         :body => data, :headers => {'content-type' => 'application/binary'})
+    [ 200, data.size ]
+  rescue RightScale::CloudApi::CloudError => e
+    puts e.message
+    [ 600, 0 ]
+  end
+end
+
+#
+# Google Cloud Storage GET and PUT
+#
+
+$gcs = RightAws::S3Interface.new(gcs_id, gcs_key, :protocol => 'https',
+                                 :server => 'storage.googleapis.com')
+$gcs.logger.level = Logger::DEBUG
+
+def gcs_get(bucket, path)
+  begin
+    res = $gcs.get(bucket, path)
+    [ 200, res[:headers]['content-length'].to_i ]
+  rescue RightAws::AwsError => e
+    puts e.message
+    [ e.http_code.to_i, 0 ]
+  end
+end
+
+def gcs_put(bucket, path, data)
+  begin
+    $gcs.put(bucket, path, data)
+    [ 200, data.size ]
+  rescue RightAws::AwsError => e
+    puts e.message
+    [ e.http_code.to_i, 0 ]
+  end
+end
+
+#
+# Amazon Simple Storage Service
+#
+
+$s3 = RightAws::S3Interface.new(s3_id, s3_key, :protocol => 'https')
+
+def s3_get(bucket, path)
+  begin
+    res = $s3.get(bucket, path)
+    [ 200, res[:headers]['content-length'].to_i ]
+  rescue RightAws::AwsError => e
+    puts e.message
+    [ e.http_code.to_i, 0 ]
+  end
+end
+
+def s3_put(bucket, path, data)
+  begin
+    $s3.put(bucket, path, data)
+    #$s3.put(bucket, path, data, 'x-amz-acl' => 'public-read')
+    [ 200, data.size ]
+  rescue RightAws::AwsError => e
+    puts e.message
+    [ e.http_code.to_i, 0 ]
+  end
+end
+
+
+#
+#
+#
+
+BASE64=true
+if BASE64
+  system 'dd if=/dev/urandom bs=768 count=10K | base64 -w0 >/tmp/random-10m'
+  system 'dd if=/dev/urandom bs=768 count=10  | base64 -w0 >/tmp/random-10k'
+else
+  system 'dd if=/dev/urandom of=/tmp/random-10m bs=1K count=10K'
+  system 'dd if=/dev/urandom of=/tmp/random-10k bs=1K count=10'
+end
+
+$data = {}
+FILES.each do |file|
+  $data[file] = IO.binread("/tmp/#{file}")
+  #$data[file].force_encoding("BINARY")
+  puts "Read #{file}: #{$data[file].size} #{$data[file].bytesize}"
+end
+
+#
+# put all the "old" files in place, this should only be run when creating fresh buckets
+# note that at the moment this is completely disabled with a 'if false' on the 'end' because
+# the old-files stuff doesn't seem to result in any different performance
+#
+if '-I' == ARGV[0]
+  buckets.each do |bucket|
+    FILES.each do |file|
+      puts "===== Uploading #{file} to #{bucket}"
+      info = timed_put(bucket, file, $data[file])
     end
   end
-end if false
+end
 
-r={}
-10.times do
-  s3_buckets.each do |bucket|
+#
+# Benchmark iterations
+#
+
+$now=`date "+%Y/%m/%d %H:%M:%S"`
+
+r={} # result hash
+ITERATIONS.times do
+  puts "========== Iteration start =========="
+  buckets.each do |bucket|
+    timed_get(bucket, FILES.first) # ensure we have a connection open
     r[bucket] ||= {}
-    gcs = bucket.start_with?('gcs')
-    b = gcs ? RightAws::S3.new(gcs_id, gcs_key, :server => 'commondatastorage.googleapis.com') \
-            : RightAws::S3Generator.new(s3_id, s3_key)
-    b = b.bucket(bucket)
     [:put, :get].each do |op|
-      %w{random-10k random-10m}.each do |file|
-        case op
+      FILES.each do |file|
+        code, time, size = case op
         when :put
-          info = gcs ? gcs_put(b, file, "/tmp/#{file}") \
-                     : `curl -X PUT -T /tmp/#{file} -s -w '#{w_fmt}' '#{b.put(file)}'`
-          #puts ">> #{b.put(file)}" if !gcs
-          puts "PUT #{bucket} #{file} #{info}"
-          info = info.split(' ')
-          r[bucket]["put-"+file] ||= Hash.new{|h,k| h[k] = []}
-          r[bucket]["put-"+file][:code] << info[1] if info[1] != '200'
-          r[bucket]["put-"+file][:time] << info[2].to_f if info[1] == '200'
-          r[bucket]["put-"+file][:kbs]  << info[3].to_f if info[1] == '200'
-
+          info = timed_put(bucket, file, $data[file])
+          puts "PUT #{bucket} #{file} => #{info.inspect}"
+          info
         when :get
-          info = gcs ? `curl -o /dev/null -s -w '#{w_fmt}' 'https://#{bucket}.commondatastorage.googleapis.com/#{file}'` \
-                     : `curl -o /dev/null -s -w '#{w_fmt}' '#{b.get(file)}'`
-          puts "GET #{bucket} #{file} #{info}"
-          info = info.split(' ')
-          r[bucket]["get-"+file] ||= Hash.new{|h,k| h[k] = []}
-          r[bucket]["get-"+file][:code] << info[1] if info[1] != '200'
-          r[bucket]["get-"+file][:time] << info[2].to_f if info[1] == '200'
-          r[bucket]["get-"+file][:kbs]  << info[4].to_f if info[1] == '200'
-
-        when :old
-          info = gcs ? `curl -o /dev/null -s -w '#{w_fmt}' 'https://#{bucket}.commondatastorage.googleapis.com/#{file}-old'` \
-                     : `curl -o /dev/null -s -w '#{w_fmt}' '#{b.get(file+"-old")}'`
-          puts "GET #{bucket} #{file}-old #{info}"
-          info = info.split(' ')
-          r[bucket]["old-"+file] ||= Hash.new{|h,k| h[k] = []}
-          r[bucket]["old-"+file][:code] << info[1] if info[1] != '200'
-          r[bucket]["old-"+file][:time] << info[2].to_f if info[1] == '200'
-          r[bucket]["old-"+file][:kbs]  << info[4].to_f if info[1] == '200'
-
+          code, time, size = timed_get(bucket, file)
+          puts "GET #{bucket} #{file} => #{info.inspect}"
+          info
         end
+        r[bucket]["#{op}-#{file}"] ||= Hash.new{|h,k| h[k] = []}
+        r[bucket]["#{op}-#{file}"][:code] << code if code != 200
+        r[bucket]["#{op}-#{file}"][:time] << time if code == 200
+        r[bucket]["#{op}-#{file}"][:kbs]  << size if code == 200
       end
     end
   end
@@ -113,6 +249,8 @@ r.keys.each do |bucket|
 
       data = {
         :machine => "#{ENV['CLOUD']}-#{ENV['MACHINE']}",
+        :time => $now,
+        :instance => $instance,
         :bucket => bucket, :op => op,
         :successes => pts, :errors => errs, 'err-list' => err_list,
         'time-avg' => time_avg, 'time-95' => time_95,

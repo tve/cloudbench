@@ -216,7 +216,7 @@ def finish(server)
         puts "    Deleting #{v}"
         vol = v.volume.show
         puts "        Volume: #{vol}"
-        vol.delete
+        vol.destroy
       end
     end
   end
