@@ -26,17 +26,20 @@ esac
 ruby -v
 if ruby -v | egrep -q '1\.8\.'; then
   echo "Installing ruby 1.9"
-  if [ ! -d /root/ruby-1.9.3-p194 ]; then
-    yum erase ruby ruby-libs ruby-mode ruby-rdoc ruby-irb ruby-ri ruby-docs -y &> /dev/null
-    yum install openssl-devel zlib-devel gcc gcc-c++ make autoconf readline-devel curl-devel expat-devel gettext-devel libyaml libyaml-devel -y &> /dev/null
-    wget -q http://ftp.ruby-lang.org/pub/ruby/1.9/ruby-1.9.3-p194.tar.gz
-    tar zxf ruby-1.9.3-p194.tar.gz
-    cd ruby-1.9.3-p194
-    ./configure --enable-shared --enable-pthread --prefix=/usr &> /dev/null
-    make &>/dev/null
-    make install &> /dev/null
-    ruby -v
-  fi
+  yum erase ruby ruby-libs ruby-mode ruby-rdoc ruby-irb ruby-ri ruby-docs -y &> /dev/null
+  rpm -Uvh $ATTACH_DIR/ruby-1.9.3p286-1.el6.x86_64.rpm
+  ruby -v
+#  if [ ! -d /root/ruby-1.9.3-p194 ]; then
+#    yum erase ruby ruby-libs ruby-mode ruby-rdoc ruby-irb ruby-ri ruby-docs -y &> /dev/null
+#    yum install openssl-devel zlib-devel gcc gcc-c++ make autoconf readline-devel curl-devel expat-devel gettext-devel libyaml libyaml-devel -y &> /dev/null
+#    wget -q http://ftp.ruby-lang.org/pub/ruby/1.9/ruby-1.9.3-p194.tar.gz
+#    tar zxf ruby-1.9.3-p194.tar.gz
+#    cd ruby-1.9.3-p194
+#    ./configure --enable-shared --enable-pthread --prefix=/usr &> /dev/null
+#    make &>/dev/null
+#    make install &> /dev/null
+#    ruby -v
+#  fi
 fi
 
 # instal ruby gems
