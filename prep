@@ -27,6 +27,7 @@ ruby -v
 if ruby -v | egrep -q '1\.8\.'; then
   echo "Installing ruby 1.9"
   yum erase ruby ruby-libs ruby-mode ruby-rdoc ruby-irb ruby-ri ruby-docs -y &> /dev/null
+  yum install libyaml -y
   rpm -Uvh $ATTACH_DIR/ruby-1.9.3p286-1.el6.x86_64.rpm
   ruby -v
 
