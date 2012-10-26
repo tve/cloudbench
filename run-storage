@@ -201,6 +201,9 @@ if '-I' == ARGV[0]
   end
 end
 
+# Check that we can write results
+system("./gs-append storage")
+
 #
 # Benchmark iterations
 #
@@ -225,6 +228,7 @@ ITERATIONS.times do
           puts "GET #{bucket} #{file} => #{info.inspect}"
           info
         end
+        kbs = code == 200 ? size/1024.0/time : 0
         r[bucket]["#{op}-#{file}"] ||= Hash.new{|h,k| h[k] = []}
         r[bucket]["#{op}-#{file}"][:code] << code if code != 200
         r[bucket]["#{op}-#{file}"][:time] << time if code == 200

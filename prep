@@ -29,6 +29,19 @@ if ruby -v | egrep -q '1\.8\.'; then
   yum erase ruby ruby-libs ruby-mode ruby-rdoc ruby-irb ruby-ri ruby-docs -y &> /dev/null
   rpm -Uvh $ATTACH_DIR/ruby-1.9.3p286-1.el6.x86_64.rpm
   ruby -v
+
+# building the RPM:
+# sudo yum install -y rpm-build rpmdevtools
+# rpmdev-setuptree
+# cd ~/rpmbuild/SOURCES
+# wget -q http://ftp.ruby-lang.org/pub/ruby/1.9/ruby-1.9.3-p286.tar.gz
+# cd ../SPECS
+# curl https://raw.github.com/rilindo/ruby-1.9.3-rpm/master/ruby19.spec > ruby19.spec
+# vi ruby19.spec # edit the minorver
+# sudo yum install gdbm-devel tcl-devel db4-devel byacc readline-devel ncurses-devel openssl-devel
+# rpmbuild -bb ruby19.spec
+# scp RPMS/x86_64/ruby-1.9.3p286-1.el6.x86_64.rpm tve@h.voneicken.com:
+
 #  if [ ! -d /root/ruby-1.9.3-p194 ]; then
 #    yum erase ruby ruby-libs ruby-mode ruby-rdoc ruby-irb ruby-ri ruby-docs -y &> /dev/null
 #    yum install openssl-devel zlib-devel gcc gcc-c++ make autoconf readline-devel curl-devel expat-devel gettext-devel libyaml libyaml-devel -y &> /dev/null
@@ -43,7 +56,7 @@ if ruby -v | egrep -q '1\.8\.'; then
 fi
 
 # instal ruby gems
-gem install google_drive right_aws --no-rdoc --no-ri
+gem install libxml-ruby ruby-hmac ripl google_drive right_aws --no-rdoc --no-ri
 
 # install fio
 yum install libaio-devel -y

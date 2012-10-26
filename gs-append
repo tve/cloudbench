@@ -30,11 +30,16 @@ end
 
 # Parse arguments
 
-unless ARGV.size > 2
+unless ARGV.size >= 1
   STDERR.puts "Usage= gs-append worksheet-title col1=value col2=value ..."
   exit 1
 end
 title = ARGV.shift
+if ARGV.size == 1
+  gs_init(title)
+  exit($sheet ? 0 : 1)
+end
+
 data = {}
 ARGV.each do |arg|
   if arg =~ /^([-a-z0-9]+)=(.*)/
