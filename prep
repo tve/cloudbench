@@ -136,7 +136,7 @@ azure)
 softlayer)
   if [ -e /dev/xvdc ]; then
     if ! mount | egrep xvdc; then
-      yum install e4fsprogs.x86_64 -y &> /dev/null
+      #yum install e4fsprogs.x86_64 -y &> /dev/null
       /sbin/mkfs.ext4 -F -q -i 100000 /dev/xvdc
       mkdir -p /mnt/ephemeral
       mount /dev/xvdc /mnt/ephemeral
@@ -151,10 +151,10 @@ softlayer)
   ;;
 
 cloudstack)
-  rm -rf /mnt/ephemeral
+  #rm -rf /mnt/ephemeral
   if [ -e /dev/vdb ]; then
     if ! mount | egrep vdb; then
-      yum install e4fsprogs.x86_64 -y &> /dev/null
+      #yum install e4fsprogs.x86_64 -y &> /dev/null
       /sbin/mkfs.ext4 -F -q -i 100000 /dev/vdb
       mkdir -p /mnt/ebs
       mount /dev/vdb /mnt/ebs
@@ -172,7 +172,7 @@ cloudstack)
 rackspace)
   if [ -e /dev/xvda ]; then
     if ! mount | egrep xvda2; then
-      yum install e4fsprogs.x86_64 -y
+      #yum install e4fsprogs.x86_64 -y
       /sbin/parted -s /dev/xvda mkpart primary 10200547328B 81604378622B
       sleep 5 # the new dev may take a few secs to appear?
       /sbin/mkfs.ext4 -F -q -i 100000 /dev/xvda2
