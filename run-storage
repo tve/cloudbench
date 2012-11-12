@@ -20,7 +20,7 @@ buckets    = %w{gcs-us gcs-eu
                 azure-rightscaleeastasia azure-rightscaleeastus azure-rightscalenortheurope
                 azure-rightscalesoutheastasia azure-rightscalewesteurope azure-rightscalewestus
 }
-FILES      = %w{random-10k} #%w{random-10k random-10m}
+FILES      = %w{random-10k random-10m}
 
 # S3 uses TVE-GRID creds
 s3_id   = ENV['AWS_ACCESS_KEY_ID']
@@ -224,7 +224,7 @@ ITERATIONS.times do
           puts "PUT #{bucket} #{file} => #{info.inspect}"
           info
         when :get
-          code, time, size = timed_get(bucket, file)
+          info = timed_get(bucket, file)
           puts "GET #{bucket} #{file} => #{info.inspect}"
           info
         end
@@ -232,13 +232,16 @@ ITERATIONS.times do
         r[bucket]["#{op}-#{file}"] ||= Hash.new{|h,k| h[k] = []}
         r[bucket]["#{op}-#{file}"][:code] << code if code != 200
         r[bucket]["#{op}-#{file}"][:time] << time if code == 200
-        r[bucket]["#{op}-#{file}"][:kbs]  << size if code == 200
+        r[bucket]["#{op}-#{file}"][:kbs]  << kbs  if code == 200
       end
     end
   end
 end
 
+puts "========== RECORDING =========="
+puts "===== Buckets: #{r.keys.join(' ')}"
 r.keys.each do |bucket|
+  puts "===== Bucket #{bucket} operations: #{r[bucket].keys.join(' ')}"
   r[bucket].keys.each do |op|
     errs = r[bucket][op][:code].size
     err_list = r[bucket][op][:code].join(' ')
