@@ -171,6 +171,8 @@ end
 #
 #
 
+puts "========== Setting up... =========="
+
 BASE64=true
 if BASE64
   system 'dd if=/dev/urandom bs=768 count=10K | base64 -w0 >/tmp/random-10m'
