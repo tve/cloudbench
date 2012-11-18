@@ -131,7 +131,10 @@ end
 
 def gcs_put(bucket, path, data)
   begin
-    $gcs.put(bucket, path, data)
+    #$gcs.put(bucket, path, data)
+    req = $gcs.generate_rest_request('PUT', :url=>"#{bucket}/#{CGI::escape path}",
+                                     'x-amz-acl' => 'public-read', :data => data)
+    $gcs.request_info(req, RightAws::RightHttp2xxParser.new)
     [ 200, data.size ]
   rescue RightAws::AwsError => e
     puts e.message
@@ -166,12 +169,12 @@ def s3_put(bucket, path, data)
   end
 end
 
-
 #
 #
 #
 
 puts "========== Setting up... =========="
+$stdout.flush
 
 BASE64=true
 if BASE64
@@ -188,6 +191,9 @@ FILES.each do |file|
   #$data[file].force_encoding("BINARY")
   puts "Read #{file}: #{$data[file].size} #{$data[file].bytesize}"
 end
+
+ripl(binding) if $init
+
 
 #
 # put all the "old" files in place, this should only be run when creating fresh buckets
@@ -215,6 +221,7 @@ $now=`date "+%Y/%m/%d %H:%M:%S"`
 r={} # result hash
 ITERATIONS.times do
   puts "========== Iteration start =========="
+  $stdout.flush
   buckets.each do |bucket|
     timed_get(bucket, FILES.first) # ensure we have a connection open
     r[bucket] ||= {}
@@ -242,13 +249,23 @@ end
 
 puts "========== RECORDING =========="
 puts "===== Buckets: #{r.keys.join(' ')}"
+$stdout.flush
 r.keys.each do |bucket|
   puts "===== Bucket #{bucket} operations: #{r[bucket].keys.join(' ')}"
   r[bucket].keys.each do |op|
+    data = {
+      :machine => "#{ENV['CLOUD']}-#{ENV['MACHINE']}",
+      :time => $now,
+      :instance => $instance,
+      :bucket => bucket, :op => op,
+    }
     errs = r[bucket][op][:code].size
     err_list = r[bucket][op][:code].join(' ')
     puts "#{bucket} #{op} => #{errs} errors: #{err_list}"
     pts = r[bucket][op][:time].size 
+    data[:successes] = pts
+    data[:errors] = errs
+    data['err-list'] = err_list
     if pts > 0
       time_avg = r[bucket][op][:time].inject(0.0){|s,t|s+=t} / pts
       time_95  = r[bucket][op][:time].sort[pts*95/100]
@@ -256,17 +273,13 @@ r.keys.each do |bucket|
       kbs_95   = r[bucket][op][:kbs].sort[pts*5/100]
       printf("%s %s => %.1f %.1f %.0f %.0fKB/s\n", bucket, op, time_avg, time_95, kbs_avg, kbs_95)
 
-      data = {
-        :machine => "#{ENV['CLOUD']}-#{ENV['MACHINE']}",
-        :time => $now,
-        :instance => $instance,
-        :bucket => bucket, :op => op,
-        :successes => pts, :errors => errs, 'err-list' => err_list,
-        'time-avg' => time_avg, 'time-95' => time_95,
-        'kbs-avg' => kbs_avg, 'kbs-95' => kbs_95 }
-      puts data.inspect
-      system("./gs-append storage #{data.map{|k,v| "'#{k}=#{v}'"}.join(' ')}")
+      data['time-avg'] = time_avg
+      data['time-95'] = time_95
+      data['kbs-avg'] = kbs_avg
+      data['kbs-95'] = kbs_95
     end
+    puts data.inspect
+    system("./gs-append storage #{data.map{|k,v| "'#{k}=#{v}'"}.join(' ')}")
 
   end
 end
